@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Map as MapIcon, Grid, Search, X, MapPin, Filter, Star, ChevronRight } from 'lucide-react';
+import { Map as MapIcon, Grid, Search, X, MapPin, Filter } from 'lucide-react';
 import BusinessCard from '@/components/business/BusinessCard';
 import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
@@ -48,14 +48,6 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   }, [businesses, searchQuery]);
 
   const mappable = filtered.filter((b) => b.lat && b.lng);
-
-  // 모바일 섹션용
-  const featured = useMemo(
-    () => filtered.filter((b) => b.cover_image_url).slice(0, 6),
-    [filtered],
-  );
-  const recent = useMemo(() => filtered.slice(0, 8), [filtered]);
-  const popular = useMemo(() => [...filtered].reverse().slice(0, 8), [filtered]);
 
   const handleSelect = (id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
@@ -162,8 +154,8 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             </div>
           </div>
 
-          {/* 업소 리스트 */}
-          <div className="flex-1 overflow-y-auto">
+          {/* ── PC 업소 리스트 ── */}
+          <div className="hidden md:flex flex-col flex-1 overflow-hidden">
             <div className="px-3 pt-2.5 pb-1 flex items-center justify-between shrink-0">
               <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
                 {filtered.length}개 업소
@@ -172,7 +164,6 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 <span className="text-[9px] text-amber-500 font-bold">&ldquo;{searchQuery}&rdquo;</span>
               )}
             </div>
-
             {filtered.length === 0 ? (
               <div className="py-12 text-center px-4">
                 <p className="text-zinc-600 text-xs font-medium">검색 결과가 없습니다.</p>
@@ -183,7 +174,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 )}
               </div>
             ) : (
-              <div className="p-1.5 space-y-0.5">
+              <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
                 {filtered.map((biz) => (
                   <BusinessCard
                     key={biz.id}
@@ -193,6 +184,71 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                     onSelect={() => handleSelect(biz.id)}
                   />
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── 모바일 밤맵 스타일 카드 리스트 ── */}
+          <div className="md:hidden flex-1 overflow-y-auto">
+            {/* 스티키 카운트 바 */}
+            <div className="sticky top-0 z-10 px-4 py-2.5 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-500">
+                {filtered.length}개 업소
+                {searchQuery && <span className="text-amber-500 ml-1.5">&ldquo;{searchQuery}&rdquo;</span>}
+              </span>
+              <span className="text-[10px] text-zinc-600 font-bold">등록순</span>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="py-16 text-center px-4">
+                <p className="text-zinc-600 text-sm font-medium">검색 결과가 없습니다.</p>
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="text-amber-500 text-xs font-bold mt-2 hover:underline">
+                    초기화
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-800/50">
+                {filtered.map((biz) => (
+                  <a
+                    key={biz.id}
+                    href={`/places/${biz.id}`}
+                    className="flex gap-3 px-4 py-4 active:bg-zinc-900/60 transition-colors"
+                  >
+                    {/* 썸네일 */}
+                    <div className="shrink-0 w-[88px] h-[68px] rounded-xl overflow-hidden bg-zinc-800 flex items-center justify-center text-zinc-600 relative">
+                      {biz.cover_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl">🏢</span>
+                      )}
+                    </div>
+
+                    {/* 텍스트 정보 */}
+                    <div className="flex-1 min-w-0 py-0.5">
+                      {/* 지역 + 카테고리 */}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] text-zinc-500 font-medium">
+                          {REGION_LABELS[biz.region_code] ?? biz.region_code}
+                        </span>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">
+                          {CATEGORY_LABELS[biz.category] ?? biz.category}
+                        </span>
+                      </div>
+                      {/* 업소명 */}
+                      <p className="text-white font-black text-[15px] leading-snug truncate">
+                        {biz.name}
+                      </p>
+                      {/* 주소 */}
+                      <p className="text-zinc-500 text-xs mt-0.5 truncate">
+                        {biz.address ?? biz.region_code}
+                      </p>
+                    </div>
+                  </a>
+                ))}
+                <div className="h-6" />
               </div>
             )}
           </div>
@@ -228,122 +284,6 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         </div>
       </div>
 
-      {/* ─── 모바일 목록 탭: 섹션형 UI ─── */}
-      {mobileTab === 'list' && (
-        <div className="md:hidden absolute inset-x-0 top-[calc(4rem+2.75rem)] bottom-0 overflow-y-auto bg-zinc-950 z-10">
-
-          {/* 추천 배너 (이미지 있는 업소) */}
-          {featured.length > 0 && (
-            <section className="pt-4 pb-2">
-              <div className="px-4 flex items-center justify-between mb-3">
-                <h2 className="text-sm font-black text-white flex items-center gap-1.5">
-                  <Star size={14} className="text-amber-500" fill="currentColor" /> 추천 업소
-                </h2>
-                <button className="text-[10px] text-zinc-500 flex items-center gap-0.5 hover:text-white">
-                  더보기 <ChevronRight size={10} />
-                </button>
-              </div>
-              <div className="flex gap-3 overflow-x-auto px-4 pb-1 no-scrollbar">
-                {featured.map((biz) => (
-                  <a
-                    key={biz.id}
-                    href={`/places/${biz.id}`}
-                    className="shrink-0 w-44 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 relative"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={biz.cover_image_url!}
-                      alt={biz.name}
-                      className="w-full h-28 object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide text-amber-500 bg-amber-500/20`}>
-                        {CATEGORY_LABELS[biz.category] ?? biz.category}
-                      </span>
-                      <p className="text-white font-bold text-xs mt-0.5 truncate">{biz.name}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 신규 오픈 */}
-          <section className="pt-3 pb-2 border-t border-zinc-800/50">
-            <div className="px-4 flex items-center justify-between mb-3">
-              <h2 className="text-sm font-black text-white">신규 오픈 🆕</h2>
-              <button className="text-[10px] text-zinc-500 flex items-center gap-0.5 hover:text-white">
-                더보기 <ChevronRight size={10} />
-              </button>
-            </div>
-            <div className="flex gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
-              {recent.map((biz) => (
-                <a
-                  key={biz.id}
-                  href={`/places/${biz.id}`}
-                  className="shrink-0 w-32"
-                >
-                  <div className="w-full h-24 rounded-2xl overflow-hidden bg-zinc-800 mb-1.5 flex items-center justify-center text-zinc-600 relative border border-zinc-700">
-                    {biz.cover_image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-2xl">🏢</span>
-                    )}
-                    <span className="absolute top-1.5 left-1.5 text-[8px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
-                      신규
-                    </span>
-                  </div>
-                  <p className="text-zinc-400 text-[10px] truncate">{biz.address?.split(' ').slice(0,2).join(' ')}</p>
-                  <p className="text-white font-bold text-xs truncate">{biz.name}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          {/* 인기 순 */}
-          <section className="pt-3 pb-2 border-t border-zinc-800/50">
-            <div className="px-4 flex items-center justify-between mb-3">
-              <h2 className="text-sm font-black text-white">인기 순 📈</h2>
-              <button className="text-[10px] text-zinc-500 flex items-center gap-0.5 hover:text-white">
-                더보기 <ChevronRight size={10} />
-              </button>
-            </div>
-            <div className="px-4 space-y-1">
-              {popular.map((biz, i) => (
-                <a
-                  key={biz.id}
-                  href={`/places/${biz.id}`}
-                  className="flex items-center gap-3 py-2.5 border-b border-zinc-800/50 last:border-0"
-                >
-                  <span className={`text-sm font-black w-5 text-center shrink-0
-                    ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-zinc-300' : i === 2 ? 'text-amber-700' : 'text-zinc-600'}`}>
-                    {i + 1}
-                  </span>
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 shrink-0 flex items-center justify-center text-zinc-600">
-                    {biz.cover_image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-base">🏢</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-sm truncate">{biz.name}</p>
-                    <p className="text-zinc-500 text-[11px] truncate">{biz.address ?? biz.region_code}</p>
-                  </div>
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0
-                    ${CATEGORY_LABELS[biz.category] === '룸살롱' ? 'text-amber-500 bg-amber-500/10' : 'text-zinc-400 bg-zinc-800'}`}>
-                    {CATEGORY_LABELS[biz.category] ?? biz.category}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          <div className="h-6" />
-        </div>
-      )}
     </div>
   );
 }
