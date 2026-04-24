@@ -21,6 +21,7 @@ interface Business {
   lat: number | null;
   lng: number | null;
   category: string;
+  subscriptions?: { plan: string; status: string }[] | null;
 }
 
 export default function KakaoMapClient({

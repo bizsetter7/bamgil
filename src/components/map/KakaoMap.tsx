@@ -9,6 +9,7 @@ interface Business {
   lat: number | null;
   lng: number | null;
   category: string;
+  subscriptions?: { plan: string; status: string }[] | null;
 }
 
 interface KakaoMapProps {
@@ -64,7 +65,7 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
             });
           }
 
-          // 업소 마커
+          // 업소 마커 (구독 티어별 CustomOverlay)
           const bounds = new window.kakao.maps.LatLngBounds();
           let hasValidPins = false;
 
@@ -73,14 +74,36 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
             hasValidPins = true;
 
             const position = new window.kakao.maps.LatLng(biz.lat, biz.lng);
-            const marker = new window.kakao.maps.Marker({
-              map,
-              position,
-              title: biz.name,
-            });
 
-            window.kakao.maps.event.addListener(marker, 'click', () => {
-              router.push(`/places/${biz.id}`);
+            // 티어 판별
+            const sub = biz.subscriptions?.[0];
+            const activePlan = sub?.status === 'active' ? sub.plan : null;
+            const isPremium = activePlan === 'premium' || activePlan === 'elite';
+            const isStandard = activePlan === 'standard';
+
+            // 티어별 핀 스타일
+            const size   = isPremium ? 20 : isStandard ? 16 : 12;
+            const bg     = isPremium ? '#f59e0b' : isStandard ? '#3b82f6' : '#71717a';
+            const shadow = isPremium
+              ? '0 0 0 5px rgba(245,158,11,0.3),0 2px 8px rgba(0,0,0,0.5)'
+              : isStandard
+              ? '0 0 0 4px rgba(59,130,246,0.25),0 2px 6px rgba(0,0,0,0.4)'
+              : '0 1px 4px rgba(0,0,0,0.4)';
+            const zIndex = isPremium ? 5 : isStandard ? 3 : 1;
+
+            const el = document.createElement('div');
+            Object.assign(el.style, {
+              width: `${size}px`, height: `${size}px`,
+              background: bg, border: '2.5px solid #fff',
+              borderRadius: '50%', boxShadow: shadow,
+              cursor: 'pointer', transition: 'transform 0.15s',
+            });
+            el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.25)'; });
+            el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
+            el.addEventListener('click', () => router.push(`/places/${biz.id}`));
+
+            new window.kakao.maps.CustomOverlay({
+              map, position, content: el, zIndex, yAnchor: 0.5,
             });
 
             bounds.extend(position);
@@ -161,11 +184,27 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
         </div>
       )}
 
-      {/* 뱃지 */}
+      {/* 범례 + 위치 뱃지 */}
       {status === 'ready' && (
-        <div className="absolute top-4 left-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-lg pointer-events-none">
-          실시간 위치 기반 탐색
-        </div>
+        <>
+          <div className="absolute top-4 left-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-lg pointer-events-none">
+            실시간 위치 기반 탐색
+          </div>
+          <div className="absolute bottom-4 right-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-2 rounded-2xl border border-zinc-800 shadow-lg pointer-events-none flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow-[0_0_0_3px_rgba(245,158,11,0.3)]" />
+              <span className="text-[9px] font-black text-amber-400 uppercase tracking-wide">Premium</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-[0_0_0_2px_rgba(59,130,246,0.25)]" />
+              <span className="text-[9px] font-black text-blue-400 uppercase tracking-wide">Standard</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-zinc-500 border border-white" />
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Basic</span>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

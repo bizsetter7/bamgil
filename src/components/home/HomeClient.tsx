@@ -26,6 +26,7 @@ interface Business {
   phone: string | null;
   open_chat_url: string | null;
   cover_image_url?: string | null;
+  subscriptions?: { plan: string; status: string }[] | null;
 }
 
 interface HomeClientProps {
