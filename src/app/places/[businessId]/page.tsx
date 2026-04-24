@@ -15,6 +15,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
 };
 
+const REGION_LABELS: Record<string, string> = {
+  seoul: '서울', gyeonggi: '경기', incheon: '인천',
+  busan: '부산', daegu: '대구', other: '기타',
+};
+
 /** 실장명 프라이버시 마스킹: 2번째 글자를 O로 치환
  *  이민 → 이O / 김철훈 → 김O훈 / 김수아야 → 김O수아야 */
 function maskName(name: string): string {
@@ -104,7 +109,7 @@ export default async function BusinessDetailPage({
           <div className="flex items-start gap-2 text-zinc-400 text-sm">
             <MapPin size={15} className="shrink-0 mt-0.5 text-zinc-600" />
             <div>
-              <span>{business.address ?? business.region_code}</span>
+              <span>{business.address ?? REGION_LABELS[business.region_code] ?? business.region_code}</span>
               {business.address_detail && (
                 <span className="text-zinc-600"> {business.address_detail}</span>
               )}

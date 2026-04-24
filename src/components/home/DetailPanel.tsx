@@ -7,10 +7,16 @@ import {
   ParkingCircle, Car, Navigation, Users, Building2,
   MessageSquare, ChevronRight,
 } from 'lucide-react';
+import { maskName } from '@/lib/maskName';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
   night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
+};
+
+const REGION_LABELS: Record<string, string> = {
+  seoul: '서울', gyeonggi: '경기', incheon: '인천',
+  busan: '부산', daegu: '대구', other: '기타',
 };
 
 interface Business {
@@ -147,14 +153,14 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
               <h2 className="text-xl font-black text-white leading-tight">
                 {business.name}
                 {business.manager_name && (
-                  <span className="text-zinc-500 font-medium text-sm"> {business.manager_name} 실장</span>
+                  <span className="text-zinc-500 font-medium text-sm"> {maskName(business.manager_name)} 실장</span>
                 )}
               </h2>
 
               <div className="mt-2 space-y-1.5">
                 <div className="flex items-start gap-1.5 text-zinc-400 text-xs">
                   <MapPin size={12} className="shrink-0 mt-0.5 text-zinc-600" />
-                  <span>{business.address ?? business.region_code}</span>
+                  <span>{business.address ?? REGION_LABELS[business.region_code] ?? business.region_code}</span>
                 </div>
                 {business.business_hours && (
                   <div className="flex items-center gap-1.5 text-zinc-400 text-xs">
