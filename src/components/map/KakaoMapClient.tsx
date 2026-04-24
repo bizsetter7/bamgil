@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 const KakaoMap = dynamic(() => import('./KakaoMap'), {
   ssr: false,
   loading: () => (
-    <div className="relative w-full h-[450px] rounded-[2.5rem] overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center">
+    <div className="relative w-full h-full bg-zinc-900 flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-zinc-500 text-xs font-bold">지도 로딩 중...</p>
@@ -23,6 +23,12 @@ interface Business {
   category: string;
 }
 
-export default function KakaoMapClient({ businesses }: { businesses: Business[] }) {
-  return <KakaoMap businesses={businesses} />;
+export default function KakaoMapClient({
+  businesses,
+  fullscreen = false,
+}: {
+  businesses: Business[];
+  fullscreen?: boolean;
+}) {
+  return <KakaoMap businesses={businesses} fullscreen={fullscreen} />;
 }

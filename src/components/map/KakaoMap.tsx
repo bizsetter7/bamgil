@@ -13,6 +13,7 @@ interface Business {
 
 interface KakaoMapProps {
   businesses: Business[];
+  fullscreen?: boolean;
 }
 
 declare global {
@@ -21,7 +22,7 @@ declare global {
   }
 }
 
-export default function KakaoMap({ businesses }: KakaoMapProps) {
+export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -31,19 +32,18 @@ export default function KakaoMap({ businesses }: KakaoMapProps) {
 
     window.kakao.maps.load(() => {
       const options = {
-        center: new window.kakao.maps.LatLng(37.5665, 126.9780), // 서울 기본
+        center: new window.kakao.maps.LatLng(37.5665, 126.9780),
         level: 5,
       };
 
       const map = new window.kakao.maps.Map(mapRef.current, options);
 
-      // 클러스터러나 마커 관리 로직 추가 가능
       const bounds = new window.kakao.maps.LatLngBounds();
       let hasValidPins = false;
 
       businesses.forEach((biz) => {
         if (!biz.lat || !biz.lng) return;
-        
+
         hasValidPins = true;
         const position = new window.kakao.maps.LatLng(biz.lat, biz.lng);
         const marker = new window.kakao.maps.Marker({
@@ -66,9 +66,15 @@ export default function KakaoMap({ businesses }: KakaoMapProps) {
   }, [businesses, router]);
 
   return (
-    <div className="relative w-full h-[450px] rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl">
+    <div
+      className={`relative w-full overflow-hidden ${
+        fullscreen
+          ? 'h-full'
+          : 'h-[450px] rounded-[2.5rem] border border-zinc-800 shadow-2xl'
+      }`}
+    >
       <div ref={mapRef} className="w-full h-full" />
-      <div className="absolute top-6 left-6 z-10 bg-zinc-950/90 backdrop-blur-md px-4 py-2 rounded-full border border-zinc-800 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-lg">
+      <div className="absolute top-4 left-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-lg">
         실시간 위치 기반 탐색
       </div>
     </div>
