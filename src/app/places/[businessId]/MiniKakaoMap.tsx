@@ -8,51 +8,28 @@ declare global {
   }
 }
 
-interface MiniKakaoMapProps {
-  lat: number;
-  lng: number;
-  name: string;
-}
-
-export default function MiniKakaoMap({ lat, lng, name }: MiniKakaoMapProps) {
+export default function MiniKakaoMap({ lat, lng, name }: { lat: number; lng: number; name: string }) {
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!mapRef.current || typeof window === 'undefined') return;
+    if (!mapRef.current) return;
+    let cancelled = false;
 
-    const initMap = () => {
-      if (!window.kakao) return;
+    const tryInit = () => {
+      if (cancelled || !mapRef.current) return;
+      if (!window.kakao) { setTimeout(tryInit, 200); return; }
 
       window.kakao.maps.load(() => {
-        if (!mapRef.current) return;
-
+        if (cancelled || !mapRef.current) return;
         const position = new window.kakao.maps.LatLng(lat, lng);
-        const map = new window.kakao.maps.Map(mapRef.current, {
-          center: position,
-          level: 3,
-        });
-
+        const map = new window.kakao.maps.Map(mapRef.current, { center: position, level: 3 });
         new window.kakao.maps.Marker({ map, position, title: name });
       });
     };
 
-    if (window.kakao) {
-      initMap();
-    } else {
-      const script = document.querySelector(
-        'script[src*="dapi.kakao.com"]',
-      ) as HTMLScriptElement | null;
-      if (script) {
-        script.addEventListener('load', initMap);
-        return () => script.removeEventListener('load', initMap);
-      }
-    }
+    tryInit();
+    return () => { cancelled = true; };
   }, [lat, lng, name]);
 
-  return (
-    <div
-      ref={mapRef}
-      className="w-full h-40 rounded-2xl overflow-hidden border border-zinc-800"
-    />
-  );
+  return <div ref={mapRef} className="w-full h-40 rounded-2xl overflow-hidden border border-zinc-800" />;
 }

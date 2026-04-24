@@ -62,7 +62,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
 
       {/* ── 모바일 탭 바 ── */}
       <div className="md:hidden flex border-b border-zinc-800 bg-zinc-950 shrink-0">
@@ -201,7 +201,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         {/* ─── 지도 영역 (PC: flex-1 / 모바일: 전체) ─── */}
         <div
           className={`
-            flex-1 relative min-w-0
+            flex-1 relative min-w-0 h-full
             ${mobileTab === 'list' ? 'hidden md:block' : 'block'}
             transition-all duration-300
           `}

@@ -51,7 +51,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         <Header />
-        <main className="flex-grow pt-16">
+        <main className="flex-grow pt-16 overflow-hidden">
           {children}
         </main>
         <Footer />

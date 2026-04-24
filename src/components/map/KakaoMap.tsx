@@ -27,14 +27,21 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
   const router = useRouter();
 
   useEffect(() => {
-    if (!mapRef.current || typeof window === 'undefined') return;
+    if (!mapRef.current) return;
+    let cancelled = false;
 
-    const initMap = () => {
-      // autoload=false 이므로 window.kakao 존재 여부만 체크 후 load() 호출
-      if (!window.kakao) return;
+    // window.kakao가 로드될 때까지 200ms마다 재시도
+    // (afterInteractive 스크립트 inject 타이밍 대응)
+    const tryInit = () => {
+      if (cancelled || !mapRef.current) return;
+
+      if (!window.kakao) {
+        setTimeout(tryInit, 200);
+        return;
+      }
 
       window.kakao.maps.load(() => {
-        if (!mapRef.current) return;
+        if (cancelled || !mapRef.current) return;
 
         const map = new window.kakao.maps.Map(mapRef.current, {
           center: new window.kakao.maps.LatLng(37.5665, 126.9780),
@@ -62,29 +69,14 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
       });
     };
 
-    // kakao SDK 이미 로드된 경우
-    if (window.kakao) {
-      initMap();
-      return;
-    }
-
-    // 아직 로드 안 됨 → script load 이벤트 대기
-    const kakaoScript = document.querySelector(
-      'script[src*="dapi.kakao.com"]',
-    ) as HTMLScriptElement | null;
-
-    if (kakaoScript) {
-      kakaoScript.addEventListener('load', initMap);
-      return () => kakaoScript.removeEventListener('load', initMap);
-    }
+    tryInit();
+    return () => { cancelled = true; };
   }, [businesses, router]);
 
   return (
     <div
       className={`relative w-full overflow-hidden ${
-        fullscreen
-          ? 'h-full'
-          : 'h-[450px] rounded-[2.5rem] border border-zinc-800 shadow-2xl'
+        fullscreen ? 'h-full' : 'h-[450px] rounded-[2.5rem] border border-zinc-800 shadow-2xl'
       }`}
     >
       <div ref={mapRef} className="w-full h-full" />
