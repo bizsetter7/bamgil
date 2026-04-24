@@ -27,8 +27,8 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">비즈니스</h4>
             <ul className="space-y-2 text-sm text-zinc-500">
               <li><a href="https://yasajang.kr" className="hover:text-white">야사장 입점신청</a></li>
-              <li><Link href="/terms" className="hover:text-white">이용약관</Link></li>
-              <li><Link href="/privacy" className="hover:text-white">개인정보처리방침</Link></li>
+              <li><a href="#" className="hover:text-white">이용약관</a></li>
+              <li><a href="#" className="hover:text-white">개인정보처리방침</a></li>
             </ul>
           </div>
         </div>
