@@ -15,6 +15,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
 };
 
+/** 실장명 프라이버시 마스킹: 2번째 글자를 O로 치환
+ *  이민 → 이O / 김철훈 → 김O훈 / 김수아야 → 김O수아야 */
+function maskName(name: string): string {
+  if (!name || name.length < 2) return name;
+  return name[0] + 'O' + name.slice(2);
+}
+
 export default async function BusinessDetailPage({
   params,
 }: {
@@ -89,7 +96,7 @@ export default async function BusinessDetailPage({
           <h1 className="text-3xl font-black text-white tracking-tight leading-tight">
             {business.name}
             {business.manager_name && (
-              <span className="text-zinc-500 font-medium text-lg"> {business.manager_name} 실장</span>
+              <span className="text-zinc-500 font-medium text-lg"> {maskName(business.manager_name)} 실장</span>
             )}
           </h1>
 
@@ -116,7 +123,9 @@ export default async function BusinessDetailPage({
           {business.manager_phone && (
             <div className="flex items-center gap-2 text-zinc-400 text-sm">
               <Phone size={15} className="shrink-0 text-zinc-600" />
-              <span>{business.manager_name && `${business.manager_name} 실장 · `}</span>
+              {business.manager_name && (
+                <span className="text-zinc-500">{maskName(business.manager_name)} 실장 ·</span>
+              )}
               <a href={`tel:${business.manager_phone}`} className="text-amber-500 font-bold hover:underline">
                 {business.manager_phone} 전화
               </a>
