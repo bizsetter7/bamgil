@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import ContactButton from './ContactButton';
-import { MapPin, Phone, MessageSquare, ChevronLeft, ShieldCheck, User, Users } from 'lucide-react';
+import { MapPin, Phone, MessageSquare, ChevronLeft, ShieldCheck, User, Users, Star, Check } from 'lucide-react';
 import Link from 'next/link';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -19,12 +19,15 @@ export default async function BusinessDetailPage({
 
   const { data: business } = await supabase
     .from('businesses')
-    .select('*, managers(*)')
+    .select('*, managers(*), subscriptions(*)')
     .eq('id', businessId)
     .eq('is_active', true)
     .single();
 
   if (!business) notFound();
+
+  const subscription = business.subscriptions?.[0];
+  const isActive = subscription?.status === 'active';
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-20">
@@ -38,14 +41,26 @@ export default async function BusinessDetailPage({
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px]" />
           
           <div className="flex items-start justify-between relative">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full uppercase tracking-widest">
                   {CATEGORY_LABELS[business.category] ?? business.category}
                 </span>
                 <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
                   <ShieldCheck size={10} /> 검증완료
                 </span>
+                
+                {/* 구독 플랜 배지 */}
+                {isActive && subscription.plan === 'premium' && (
+                  <span className="text-[10px] font-black text-white bg-amber-500 px-2.5 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/20">
+                    <Star size={10} fill="white" /> 프리미엄 파트너
+                  </span>
+                )}
+                {isActive && subscription.plan === 'standard' && (
+                  <span className="text-[10px] font-black text-white bg-blue-600 px-2.5 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
+                    <Check size={10} /> 공식 파트너
+                  </span>
+                )}
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
                 {business.name}

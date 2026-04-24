@@ -16,9 +16,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "밤길 (BAMGIL) | 안전하고 즐거운 밤문화 탐색",
-  description: "내 주변 검증된 업소 정보와 실시간 위치 확인. 밤길이 사장님과 손님을 잇습니다.",
+  title: '밤길 — 검증된 업소 탐색 플랫폼',
+  description: '지도 기반으로 내 주변 안전한 업소를 찾아보세요.',
   keywords: ["밤길", "밤문화", "업소정보", "위치기반", "카카오맵"],
+  openGraph: {
+    title: '밤길',
+    description: '검증된 업소 탐색',
+    url: 'https://bamgil.kr',
+    siteName: '밤길',
+    locale: 'ko_KR',
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {

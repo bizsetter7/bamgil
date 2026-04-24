@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Star, Phone, MessageSquare } from 'lucide-react';
+import { MapPin, Star, Phone, MessageSquare, Eye } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱', 
@@ -12,13 +12,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function BusinessCard({ business }: { business: any }) {
+  const viewCount = business.bamgil_contacts?.[0]?.count ?? 0;
+
   return (
     <Link href={`/places/${business.id}`}>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-amber-500/50 transition-all cursor-pointer group relative overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-amber-500/50 transition-all cursor-pointer group relative overflow-hidden h-full flex flex-col">
         {/* Glow Effect */}
         <div className="absolute -right-10 -bottom-10 w-20 h-20 bg-amber-500/5 blur-3xl group-hover:bg-amber-500/10 transition-all duration-500" />
         
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 flex-grow">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded uppercase tracking-widest">
@@ -49,6 +51,14 @@ export default function BusinessCard({ business }: { business: any }) {
                 <MessageSquare size={10} /> 오픈채팅
               </div>
             )}
+          </div>
+        </div>
+
+        {/* 조회수 배지 */}
+        <div className="mt-4 pt-4 border-t border-zinc-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] font-bold">
+            <Eye size={12} className="text-zinc-600" />
+            이번달 <span className="text-zinc-300">{viewCount.toLocaleString()}명</span> 조회
           </div>
         </div>
       </div>

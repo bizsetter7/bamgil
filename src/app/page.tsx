@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import BusinessCard from '@/components/business/BusinessCard';
 import KakaoMap from '@/components/map/KakaoMap';
-import { Filter, Map as MapIcon, Grid } from 'lucide-react';
+import { Filter, Map as MapIcon, Grid, MapPin } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱',
@@ -10,6 +10,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   night_club: '클럽',
   hostbar: '호스트바',
   general: '일반',
+  other: '기타',
+};
+
+const REGION_LABELS: Record<string, string> = {
+  seoul: '서울',
+  gyeonggi: '경기',
+  incheon: '인천',
+  busan: '부산',
+  daegu: '대구',
   other: '기타',
 };
 
@@ -24,7 +33,7 @@ export default async function HomePage({
 
   let query = supabase
     .from('businesses')
-    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url')
+    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, bamgil_contacts(count)')
     .eq('is_active', true)
     .eq('is_verified', true);
 
@@ -34,7 +43,7 @@ export default async function HomePage({
   const { data: businesses } = await query.limit(50);
 
   return (
-    <div className="max-w-screen-lg mx-auto px-4 py-10 space-y-12">
+    <div className="max-w-screen-lg mx-auto px-4 py-10 space-y-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-4xl font-black text-white tracking-tight">업소 탐색</h1>
@@ -51,31 +60,64 @@ export default async function HomePage({
         </div>
       </header>
 
-      {/* 카테고리 필터 */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
-        <a
-          href="/"
-          className={`px-5 py-2.5 rounded-full text-sm font-bold border shrink-0 transition-all
-            ${!category 
-              ? 'bg-white text-black border-white' 
-              : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700'
-            }`}
-        >
-          전체
-        </a>
-        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+      <div className="space-y-4">
+        {/* 지역 필터 */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1.5 px-3 text-zinc-500 shrink-0 border-r border-zinc-800 mr-2">
+            <MapPin size={14} />
+            <span className="text-xs font-bold uppercase tracking-wider">지역</span>
+          </div>
           <a
-            key={key}
-            href={`/?category=${key}${region ? `&region=${region}` : ''}`}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold border shrink-0 transition-all
-              ${category === key
-                ? 'bg-amber-500 text-black border-amber-500'
-                : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'
+            href={`/${category ? `?category=${category}` : ''}`}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border shrink-0 transition-all
+              ${!region 
+                ? 'bg-zinc-100 text-black border-zinc-100' 
+                : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700'
               }`}
           >
-            {label}
+            전체
           </a>
-        ))}
+          {Object.entries(REGION_LABELS).map(([key, label]) => (
+            <a
+              key={key}
+              href={`/?region=${key}${category ? `&category=${category}` : ''}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border shrink-0 transition-all
+                ${region === key
+                  ? 'bg-white text-black border-white'
+                  : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'
+                }`}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
+        {/* 카테고리 필터 */}
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <a
+            href={`/${region ? `?region=${region}` : ''}`}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold border shrink-0 transition-all
+              ${!category 
+                ? 'bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20' 
+                : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700'
+              }`}
+          >
+            전체 카테고리
+          </a>
+          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <a
+              key={key}
+              href={`/?category=${key}${region ? `&region=${region}` : ''}`}
+              className={`px-5 py-2.5 rounded-full text-sm font-bold border shrink-0 transition-all
+                ${category === key
+                  ? 'bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20'
+                  : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'
+                }`}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
       </div>
 
       {/* 지도 섹션 */}
@@ -83,8 +125,6 @@ export default async function HomePage({
         <KakaoMap
           businesses={(businesses ?? []).filter(b => b.lat && b.lng)}
           onPinClick={(id) => {
-            // client component interaction usually handled via router or window.location
-            // in this simplified version we use window.location
             if (typeof window !== 'undefined') window.location.href = `/places/${id}`;
           }}
         />
