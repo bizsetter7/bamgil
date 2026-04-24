@@ -12,7 +12,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function BusinessCard({ business }: { business: any }) {
-  const viewCount = business.bamgil_contacts?.[0]?.count ?? 0;
+  const viewCount = 0; // TODO: 별도 API로 조회수 집계 예정
 
   return (
     <Link href={`/places/${business.id}`}>

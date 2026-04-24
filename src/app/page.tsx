@@ -33,9 +33,7 @@ export default async function HomePage({
 
   let query = supabase
     .from('businesses')
-    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, bamgil_contacts(count)')
-    .eq('is_active', true)
-    .eq('is_verified', true);
+    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url');
 
   if (region) query = query.eq('region_code', region);
   if (category) query = query.eq('category', category);
