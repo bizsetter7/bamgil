@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { MapPin, Phone, MessageSquare, Star, Building2 } from 'lucide-react';
 
+const REGION_LABELS: Record<string, string> = {
+  seoul: '서울', gyeonggi: '경기', incheon: '인천',
+  busan: '부산', daegu: '대구', other: '기타',
+};
+
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱',
   karaoke_bar: '노래방',
@@ -68,7 +73,7 @@ export default function BusinessCard({ business, compact = false, selected = fal
             {business.name}
           </h3>
           <p className="text-[11px] text-zinc-500 truncate">
-            {business.address ?? business.region_code}
+            {business.address ?? (business.region_code ? REGION_LABELS[business.region_code] ?? business.region_code : '')}
           </p>
         </div>
 

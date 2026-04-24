@@ -5,6 +5,7 @@ import { Map as MapIcon, Grid, Search, X, MapPin, Filter } from 'lucide-react';
 import BusinessCard from '@/components/business/BusinessCard';
 import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
+import { maskName } from '@/lib/maskName';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱', karaoke_bar: '노래방', bar: '바/나이트',
@@ -26,6 +27,8 @@ interface Business {
   phone: string | null;
   open_chat_url: string | null;
   cover_image_url?: string | null;
+  manager_name?: string | null;
+  business_hours?: string | null;
   subscriptions?: { plan: string; status: string }[] | null;
 }
 
@@ -211,44 +214,73 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
               </div>
             ) : (
               <div className="divide-y divide-zinc-800/50">
-                {filtered.map((biz) => (
-                  <a
-                    key={biz.id}
-                    href={`/places/${biz.id}`}
-                    className="flex gap-3 px-4 py-4 active:bg-zinc-900/60 transition-colors"
-                  >
-                    {/* 썸네일 */}
-                    <div className="shrink-0 w-[88px] h-[68px] rounded-xl overflow-hidden bg-zinc-800 flex items-center justify-center text-zinc-600 relative">
-                      {biz.cover_image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-3xl">🏢</span>
-                      )}
-                    </div>
+                {filtered.map((biz) => {
+                  const sub = biz.subscriptions?.[0];
+                  const activePlan = sub?.status === 'active' ? sub.plan : null;
+                  const isPremium = activePlan === 'premium' || activePlan === 'elite';
+                  const isStandard = activePlan === 'standard';
+                  const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
+                  const addressLine = biz.address ?? regionLabel;
 
-                    {/* 텍스트 정보 */}
-                    <div className="flex-1 min-w-0 py-0.5">
-                      {/* 지역 + 카테고리 */}
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[10px] text-zinc-500 font-medium">
-                          {REGION_LABELS[biz.region_code] ?? biz.region_code}
-                        </span>
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">
-                          {CATEGORY_LABELS[biz.category] ?? biz.category}
-                        </span>
+                  return (
+                    <a
+                      key={biz.id}
+                      href={`/places/${biz.id}`}
+                      className="flex gap-3 px-4 py-3.5 active:bg-zinc-900/60 transition-colors"
+                    >
+                      {/* 썸네일 */}
+                      <div className="shrink-0 w-[96px] h-[76px] rounded-xl overflow-hidden bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center relative">
+                        {biz.cover_image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[11px] font-black text-zinc-400 leading-tight text-center">입점<br />문의</span>
+                            <div className="w-8 h-px bg-zinc-600" />
+                          </div>
+                        )}
+                        {/* 티어 배지 */}
+                        {isPremium && (
+                          <div className="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            프리미엄
+                          </div>
+                        )}
+                        {isStandard && (
+                          <div className="absolute top-1.5 left-1.5 bg-blue-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            스탠다드
+                          </div>
+                        )}
                       </div>
-                      {/* 업소명 */}
-                      <p className="text-white font-black text-[15px] leading-snug truncate">
-                        {biz.name}
-                      </p>
-                      {/* 주소 */}
-                      <p className="text-zinc-500 text-xs mt-0.5 truncate">
-                        {biz.address ?? biz.region_code}
-                      </p>
-                    </div>
-                  </a>
-                ))}
+
+                      {/* 텍스트 정보 */}
+                      <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
+                        {/* 지역 + 카테고리 */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-zinc-500 font-medium">{regionLabel}</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                            {CATEGORY_LABELS[biz.category] ?? biz.category}
+                          </span>
+                        </div>
+                        {/* 업소명 */}
+                        <p className="text-white font-black text-[15px] leading-snug truncate">
+                          {biz.name}
+                        </p>
+                        {/* 실장명 */}
+                        {biz.manager_name && (
+                          <p className="text-zinc-400 text-[11px]">{maskName(biz.manager_name)} 실장</p>
+                        )}
+                        {/* 영업시간 */}
+                        {biz.business_hours && (
+                          <p className="text-zinc-500 text-[10px] truncate">#{biz.business_hours}</p>
+                        )}
+                        {/* 주소 */}
+                        {!biz.business_hours && (
+                          <p className="text-zinc-500 text-[10px] truncate">{addressLine}</p>
+                        )}
+                      </div>
+                    </a>
+                  );
+                })}
                 <div className="h-6" />
               </div>
             )}

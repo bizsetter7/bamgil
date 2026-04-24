@@ -12,7 +12,7 @@ export default async function HomePage({
 
   let query = supabase
     .from('businesses')
-    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, cover_image_url, subscriptions(plan, status)')
+    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, cover_image_url, manager_name, business_hours, subscriptions(plan, status)')
     .eq('is_active', true);
 
   if (region) query = query.eq('region_code', region);
