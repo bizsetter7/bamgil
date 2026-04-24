@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import BusinessCard from '@/components/business/BusinessCard';
-import KakaoMap from '@/components/map/KakaoMap';
+import KakaoMapClient from '@/components/map/KakaoMapClient';
 import { Filter, Map as MapIcon, Grid, MapPin } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -120,7 +120,7 @@ export default async function HomePage({
 
       {/* 지도 섹션 */}
       <section className="relative">
-        <KakaoMap
+        <KakaoMapClient
           businesses={(businesses ?? []).filter(b => b.lat && b.lng)}
         />
       </section>

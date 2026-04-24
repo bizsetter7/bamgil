@@ -27,6 +27,7 @@ export default function KakaoMap({ businesses }: KakaoMapProps) {
 
   useEffect(() => {
     if (!mapRef.current) return;
+    if (typeof window === 'undefined' || !window.kakao?.maps) return;
 
     window.kakao.maps.load(() => {
       const options = {
