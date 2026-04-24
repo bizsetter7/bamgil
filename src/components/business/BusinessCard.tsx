@@ -33,55 +33,58 @@ interface BusinessCardProps {
     cover_image_url?: string | null;
   };
   compact?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
-export default function BusinessCard({ business, compact = false }: BusinessCardProps) {
+export default function BusinessCard({ business, compact = false, selected = false, onSelect }: BusinessCardProps) {
   const categoryColor =
     CATEGORY_COLORS[business.category] ?? 'text-zinc-400 bg-zinc-500/10';
   const categoryLabel = CATEGORY_LABELS[business.category] ?? business.category;
 
   /* ── 사이드패널 컴팩트 카드 ── */
   if (compact) {
-    return (
-      <Link href={`/places/${business.id}`}>
-        <div className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-zinc-900 transition-colors group cursor-pointer">
-          {/* 썸네일 */}
-          <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-zinc-500 transition-colors">
-            {business.cover_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={business.cover_image_url}
-                alt={business.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Building2 size={20} />
-            )}
-          </div>
-
-          {/* 정보 */}
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${categoryColor}`}>
-                {categoryLabel}
-              </span>
-            </div>
-            <h3 className="text-sm font-bold text-white truncate group-hover:text-amber-500 transition-colors leading-tight">
-              {business.name}
-            </h3>
-            <p className="text-xs text-zinc-500 truncate">
-              {business.address ?? business.region_code}
-            </p>
-          </div>
-
-          {/* 아이콘 */}
-          <div className="shrink-0 flex gap-1.5 text-zinc-700 group-hover:text-zinc-500 transition-colors">
-            {business.phone && <Phone size={11} />}
-            {business.open_chat_url && <MessageSquare size={11} />}
-          </div>
+    const cardContent = (
+      <div className={`flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors group cursor-pointer
+        ${selected ? 'bg-zinc-800 border border-zinc-700' : 'hover:bg-zinc-900 border border-transparent'}`}
+      >
+        {/* 썸네일 */}
+        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-zinc-500 transition-colors">
+          {business.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
+          ) : (
+            <Building2 size={18} />
+          )}
         </div>
-      </Link>
+
+        {/* 정보 */}
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${categoryColor}`}>
+            {categoryLabel}
+          </span>
+          <h3 className={`text-sm font-bold truncate transition-colors leading-tight
+            ${selected ? 'text-amber-500' : 'text-white group-hover:text-amber-500'}`}>
+            {business.name}
+          </h3>
+          <p className="text-[11px] text-zinc-500 truncate">
+            {business.address ?? business.region_code}
+          </p>
+        </div>
+
+        {/* 아이콘 */}
+        <div className="shrink-0 flex gap-1.5 text-zinc-700 group-hover:text-zinc-500 transition-colors">
+          {business.phone && <Phone size={11} />}
+          {business.open_chat_url && <MessageSquare size={11} />}
+        </div>
+      </div>
     );
+
+    // onSelect 있으면 패널 열기, 없으면 페이지 이동
+    if (onSelect) {
+      return <div onClick={onSelect}>{cardContent}</div>;
+    }
+    return <Link href={`/places/${business.id}`}>{cardContent}</Link>;
   }
 
   /* ── 기본 그리드 카드 ── */
