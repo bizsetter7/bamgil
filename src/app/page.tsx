@@ -124,9 +124,6 @@ export default async function HomePage({
       <section className="relative">
         <KakaoMap
           businesses={(businesses ?? []).filter(b => b.lat && b.lng)}
-          onPinClick={(id) => {
-            if (typeof window !== 'undefined') window.location.href = `/places/${id}`;
-          }}
         />
       </section>
 

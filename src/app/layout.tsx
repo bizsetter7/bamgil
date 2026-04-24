@@ -48,7 +48,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-50">
         <Script
           src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false`}
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
         <Header />
         <main className="flex-grow pt-16">

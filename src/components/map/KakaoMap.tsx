@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Business {
   id: string;
@@ -12,7 +13,6 @@ interface Business {
 
 interface KakaoMapProps {
   businesses: Business[];
-  onPinClick: (id: string) => void;
 }
 
 declare global {
@@ -21,8 +21,9 @@ declare global {
   }
 }
 
-export default function KakaoMap({ businesses, onPinClick }: KakaoMapProps) {
+export default function KakaoMap({ businesses }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -51,7 +52,7 @@ export default function KakaoMap({ businesses, onPinClick }: KakaoMapProps) {
         });
 
         window.kakao.maps.event.addListener(marker, 'click', () => {
-          onPinClick(biz.id);
+          router.push(`/places/${biz.id}`);
         });
 
         bounds.extend(position);
