@@ -62,7 +62,7 @@ export default function KakaoMap({ businesses }: KakaoMapProps) {
         map.setBounds(bounds);
       }
     });
-  }, [businesses, onPinClick]);
+  }, [businesses, router]);
 
   return (
     <div className="relative w-full h-[450px] rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl">
