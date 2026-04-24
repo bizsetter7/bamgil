@@ -3,7 +3,10 @@ import { MapPin, Phone, MessageSquare, Star, Building2 } from 'lucide-react';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
-  busan: '부산', daegu: '대구', other: '기타',
+  busan: '부산', daegu: '대구', daejeon: '대전', gwangju: '광주', ulsan: '울산',
+  chungnam: '충청남도', chungbuk: '충청북도', jeonnam: '전라남도', jeonbuk: '전라북도',
+  gangwon: '강원도', gyeongnam: '경상남도', gyeongbuk: '경상북도', jeju: '제주도',
+  other: '기타',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
