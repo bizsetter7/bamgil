@@ -14,9 +14,9 @@ export default function ImageSlider({ images, name }: ImageSliderProps) {
   // 이미지 없으면 플레이스홀더
   if (images.length === 0) {
     return (
-      <div className="w-full h-52 bg-zinc-900 flex items-center justify-center text-zinc-700">
+      <div className="w-full h-72 bg-zinc-900 flex items-center justify-center text-zinc-700">
         <div className="flex flex-col items-center gap-2">
-          <Building2 size={40} />
+          <Building2 size={48} />
           <p className="text-xs text-zinc-600">사진 없음</p>
         </div>
       </div>
@@ -27,7 +27,7 @@ export default function ImageSlider({ images, name }: ImageSliderProps) {
   const next = () => setCurrent((c) => (c + 1) % images.length);
 
   return (
-    <div className="relative w-full h-52 overflow-hidden bg-zinc-900">
+    <div className="relative w-full h-72 overflow-hidden bg-zinc-900">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[current]}

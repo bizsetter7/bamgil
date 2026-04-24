@@ -31,5 +31,5 @@ export default function MiniKakaoMap({ lat, lng, name }: { lat: number; lng: num
     return () => { cancelled = true; };
   }, [lat, lng, name]);
 
-  return <div ref={mapRef} className="w-full h-40 rounded-2xl overflow-hidden border border-zinc-800" />;
+  return <div ref={mapRef} className="w-full h-56 rounded-2xl overflow-hidden border border-zinc-800" />;
 }
