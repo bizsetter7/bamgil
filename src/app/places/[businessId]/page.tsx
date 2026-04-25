@@ -9,6 +9,7 @@ import {
   Star, Check, ParkingCircle, Car, Navigation,
   Users, Building2, Flag, Copy,
 } from 'lucide-react';
+import { formatPhone } from '@/lib/formatPhone';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
@@ -135,7 +136,7 @@ export default async function BusinessDetailPage({
                 <span className="text-zinc-500">{maskName(business.manager_name)} 실장 ·</span>
               )}
               <a href={`tel:${business.manager_phone}`} className="text-amber-500 font-bold hover:underline">
-                {business.manager_phone} 전화
+                {formatPhone(business.manager_phone)} 전화
               </a>
             </div>
           )}

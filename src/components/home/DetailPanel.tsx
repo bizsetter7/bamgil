@@ -8,6 +8,7 @@ import {
   MessageSquare, ChevronRight,
 } from 'lucide-react';
 import { maskName } from '@/lib/maskName';
+import { formatPhone } from '@/lib/formatPhone';
 
 const CATEGORY_LABELS: Record<string, string> = {
   room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
@@ -179,7 +180,7 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
                       className="text-amber-500 font-bold"
                       onClick={() => logContact('call')}
                     >
-                      {business.manager_phone ?? business.phone} 전화
+                      {formatPhone(business.manager_phone ?? business.phone)} 전화
                     </a>
                   </div>
                 )}
