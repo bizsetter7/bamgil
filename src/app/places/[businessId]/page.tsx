@@ -9,7 +9,7 @@ import ViewIncrementer from './ViewIncrementer';
 import {
   MapPin, Phone, Clock, ChevronLeft, ShieldCheck,
   Star, Check, ParkingCircle, Car, Navigation,
-  Users, Building2, Flag, Copy,
+  Users, Building2, Flag, Copy, Zap,
 } from 'lucide-react';
 import { formatPhone } from '@/lib/formatPhone';
 
