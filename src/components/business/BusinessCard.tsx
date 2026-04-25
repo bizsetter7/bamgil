@@ -57,12 +57,12 @@ export default function BusinessCard({ business, compact = false, selected = fal
         ${selected ? 'bg-zinc-800 border border-zinc-700' : 'hover:bg-zinc-900 border border-transparent'}`}
       >
         {/* 썸네일 */}
-        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-zinc-500 transition-colors">
+        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center transition-colors">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
-            <Building2 size={18} />
+            <span className="text-[9px] font-black text-zinc-500 leading-tight text-center">입점<br />문의</span>
           )}
         </div>
 
