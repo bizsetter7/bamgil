@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ContactButton from './ContactButton';
 import ImageSlider from './ImageSlider';
 import MiniKakaoMap from './MiniKakaoMap';
+import ViewIncrementer from './ViewIncrementer';
 import {
   MapPin, Phone, Clock, ChevronLeft, ShieldCheck,
   Star, Check, ParkingCircle, Car, Navigation,
@@ -86,6 +87,7 @@ export default async function BusinessDetailPage({
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-28">
+      <ViewIncrementer businessId={businessId} />
       <div className="max-w-2xl mx-auto">
         {/* ── 이미지 슬라이더 (뒤로가기 오버레이 포함) ── */}
         <div className="relative">
@@ -115,7 +117,8 @@ export default async function BusinessDetailPage({
               <span className="text-xs font-black text-zinc-400">
                 {CATEGORY_LABELS[business.category] ?? business.category}
               </span>
-              <span className="text-[10px] text-zinc-600 font-bold bg-zinc-900 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] text-zinc-400 font-black bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded flex items-center gap-1">
+                <Zap size={10} className="text-zinc-600" />
                 조회 {(business as any).views ?? Math.floor(Math.abs(parseInt(businessId.substring(0, 4), 16) % 1000) + 100)}
               </span>
             </div>
