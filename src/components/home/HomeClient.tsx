@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Map as MapIcon, Grid, Search, X, MapPin, Filter } from 'lucide-react';
+import { Map as MapIcon, Grid, Search, X, MapPin, Filter, ChevronDown, Check } from 'lucide-react';
+import { REGIONS_MAP } from '@/lib/constants/regions';
 import BusinessCard from '@/components/business/BusinessCard';
 import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
@@ -45,14 +46,29 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const [mobileTab, setMobileTab] = useState<'map' | 'list'>('map');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSubRegions, setSelectedSubRegions] = useState<string[]>([]);
+  const [showSubRegionSelector, setShowSubRegionSelector] = useState(false);
 
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return businesses;
-    const q = searchQuery.toLowerCase();
-    return businesses.filter(
-      (b) => b.name.toLowerCase().includes(q) || (b.address ?? '').toLowerCase().includes(q),
-    );
-  }, [businesses, searchQuery]);
+    let result = businesses;
+    
+    // 1. 검색어 필터
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (b) => b.name.toLowerCase().includes(q) || (b.address ?? '').toLowerCase().includes(q),
+      );
+    }
+
+    // 2. 서브 지역 필터 (즉시 필터링)
+    if (selectedSubRegions.length > 0) {
+      result = result.filter((b) => 
+        selectedSubRegions.some(sub => (b.address ?? '').includes(sub))
+      );
+    }
+
+    return result;
+  }, [businesses, searchQuery, selectedSubRegions]);
 
   const mappable = filtered.filter((b) => b.lat && b.lng);
 
@@ -119,24 +135,80 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
           {/* 지역 필터 */}
           <div className="px-3 pt-2.5 pb-2 border-b border-zinc-800 shrink-0 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-zinc-600">
-              <MapPin size={10} />
-              <span className="text-[9px] font-black uppercase tracking-widest">지역</span>
+            <div className="flex items-center justify-between text-zinc-600">
+              <div className="flex items-center gap-1.5">
+                <MapPin size={10} />
+                <span className="text-[9px] font-black uppercase tracking-widest">지역</span>
+              </div>
+              {region && (
+                <button 
+                  onClick={() => setShowSubRegionSelector(!showSubRegionSelector)}
+                  className="text-[10px] font-bold text-amber-500 hover:text-amber-400 flex items-center gap-0.5"
+                >
+                  {REGION_LABELS[region]} 상세 {showSubRegionSelector ? <ChevronDown size={10} className="rotate-180" /> : <ChevronDown size={10} />}
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-1">
               <a href={`/${category ? `?category=${category}` : ''}`}
+                onClick={() => setSelectedSubRegions([])}
                 className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-all
                   ${!region ? 'bg-zinc-100 text-black border-zinc-100' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-white'}`}>
                 전체
               </a>
               {Object.entries(REGION_LABELS).map(([key, label]) => (
                 <a key={key} href={`/?region=${key}${category ? `&category=${category}` : ''}`}
+                  onClick={() => region !== key && setSelectedSubRegions([])}
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-all
                     ${region === key ? 'bg-white text-black border-white' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-white'}`}>
                   {label}
                 </a>
               ))}
             </div>
+
+            {/* 서브 지역 선택기 (지역 선택 시 노출 가능) */}
+            {region && showSubRegionSelector && (
+              <div className="mt-2 p-2 bg-zinc-900 rounded-xl border border-zinc-800 grid grid-cols-3 gap-1">
+                {(REGIONS_MAP[REGION_LABELS[region] === '경기' ? '경기도' : REGION_LABELS[region]] || []).map(sub => {
+                  const isSelected = selectedSubRegions.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      onClick={() => {
+                        setSelectedSubRegions(prev => 
+                          prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
+                        );
+                      }}
+                      className={`text-[10px] py-1 rounded-lg text-center transition-all ${
+                        isSelected ? 'bg-amber-500 text-black font-black' : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 선택된 서브 지역 칩 */}
+            {selectedSubRegions.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {selectedSubRegions.map(sub => (
+                  <div key={sub} className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[9px] font-black">
+                    {sub}
+                    <button onClick={() => setSelectedSubRegions(prev => prev.filter(s => s !== sub))}>
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => setSelectedSubRegions([])}
+                  className="text-[9px] text-zinc-600 hover:text-zinc-400 font-bold ml-1"
+                >
+                  초기화
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 카테고리 필터 */}
