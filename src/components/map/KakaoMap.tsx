@@ -15,6 +15,7 @@ interface Business {
 interface KakaoMapProps {
   businesses: Business[];
   fullscreen?: boolean;
+  onLoad?: (map: any) => void;
 }
 
 declare global {
@@ -26,7 +27,7 @@ declare global {
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
 
-export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapProps) {
+export default function KakaoMap({ businesses, fullscreen = false, onLoad }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -50,6 +51,7 @@ export default function KakaoMap({ businesses, fullscreen = false }: KakaoMapPro
           });
 
           setStatus('ready');
+          if (onLoad) onLoad(map);
 
           // 현재 위치 마커
           if (userLat !== DEFAULT_LAT || userLng !== DEFAULT_LNG) {

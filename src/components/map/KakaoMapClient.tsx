@@ -27,9 +27,11 @@ interface Business {
 export default function KakaoMapClient({
   businesses,
   fullscreen = false,
+  onLoad,
 }: {
   businesses: Business[];
   fullscreen?: boolean;
+  onLoad?: (map: any) => void;
 }) {
-  return <KakaoMap businesses={businesses} fullscreen={fullscreen} />;
+  return <KakaoMap businesses={businesses} fullscreen={fullscreen} onLoad={onLoad} />;
 }

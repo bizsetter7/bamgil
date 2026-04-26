@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import ContactButton from './ContactButton';
+import BottomCtaBar from './BottomCtaBar';
 import ImageSlider from './ImageSlider';
 import MiniKakaoMap from './MiniKakaoMap';
 import ViewIncrementer from './ViewIncrementer';
@@ -73,6 +73,9 @@ export default async function BusinessDetailPage({
     .single();
 
   if (!business) notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = user?.id === business.owner_user_id;
 
   const subscription = business.subscriptions?.[0];
   const isActive = subscription?.status === 'active';
@@ -390,30 +393,15 @@ export default async function BusinessDetailPage({
       </div>
 
       {/* ── 하단 고정 CTA ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 px-4 py-3 safe-area-pb">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          {business.phone || business.manager_phone ? (
-            <ContactButton
-              businessId={businessId}
-              type="call"
-              href={`tel:${business.manager_phone ?? business.phone}`}
-              label="전화, 문자 상담하기"
-            />
-          ) : (
-            <div className="flex-1 py-4 rounded-2xl bg-zinc-800 text-zinc-600 text-center text-sm font-bold">
-              전화번호 미등록
-            </div>
-          )}
-          {business.open_chat_url && (
-            <ContactButton
-              businessId={businessId}
-              type="chat"
-              href={business.open_chat_url}
-              label="오픈톡 상담"
-            />
-          )}
-        </div>
-      </div>
+      <BottomCtaBar 
+        business={{
+          id: business.id,
+          phone: business.phone,
+          manager_phone: business.manager_phone,
+          kakao_url: business.open_chat_url,
+        }}
+        isOwner={isOwner}
+      />
     </div>
   );
 }
