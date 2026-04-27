@@ -8,10 +8,6 @@ import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
 import { maskName } from '@/lib/maskName';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  room_salon: '룸살롱', karaoke_bar: '노래방', bar: '바/나이트',
-  night_club: '클럽', hostbar: '호스트바', general: '일반', other: '기타',
-};
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
   busan: '부산', daegu: '대구', daejeon: '대전', gwangju: '광주', ulsan: '울산',
@@ -210,11 +206,11 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
                 전체
               </a>
-              {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                <a key={key} href={`/?category=${key}${region ? `&region=${region}` : ''}`}
+              {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '일반', '기타'].map((cat) => (
+                <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
-                    ${category === key ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
-                  {label}
+                    ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                  {cat}
                 </a>
               ))}
             </div>
@@ -320,7 +316,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] text-zinc-500 font-medium">{regionLabel}</span>
                           <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                            {CATEGORY_LABELS[biz.category] ?? biz.category}
+                            {biz.category}
                           </span>
                         </div>
                         {/* 업소명 */}

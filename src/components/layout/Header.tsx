@@ -6,10 +6,10 @@ import { useState } from 'react';
 
 const NAV_LINKS = [
   { href: '/', label: '홈' },
-  { href: '/?category=room_salon', label: '룸살롱' },
-  { href: '/?category=karaoke_bar', label: '노래방' },
-  { href: '/?category=bar', label: '바/나이트' },
-  { href: '/?category=night_club', label: '클럽' },
+  { href: `/?category=${encodeURIComponent('룸살롱')}`, label: '룸살롱' },
+  { href: `/?category=${encodeURIComponent('노래주점')}`, label: '노래방' },
+  { href: `/?category=${encodeURIComponent('유흥주점')}`, label: '바/나이트' },
+  { href: `/?category=${encodeURIComponent('나이트')}`, label: '클럽' },
 ];
 
 export default function Header() {
@@ -110,11 +110,11 @@ export default function Header() {
               카테고리
             </p>
             {[
-              { href: '/?category=room_salon', label: '룸살롱' },
-              { href: '/?category=karaoke_bar', label: '노래방' },
-              { href: '/?category=bar', label: '바/주점' },
-              { href: '/?category=night_club', label: '나이트클럽' },
-              { href: '/?category=hostbar', label: '호스트바' },
+              { href: `/?category=${encodeURIComponent('룸살롱')}`, label: '룸살롱' },
+              { href: `/?category=${encodeURIComponent('노래주점')}`, label: '노래방' },
+              { href: `/?category=${encodeURIComponent('유흥주점')}`, label: '바/주점' },
+              { href: `/?category=${encodeURIComponent('나이트')}`, label: '나이트클럽' },
+              { href: `/?category=${encodeURIComponent('호스트바')}`, label: '호스트바' },
             ].map((link) => (
               <Link
                 key={link.href}

@@ -10,13 +10,13 @@ interface ImageSliderProps {
 }
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
-  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
-  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
-  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
-  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
-  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
-  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
-  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  룸살롱: 'from-amber-800 via-orange-900 to-zinc-950',
+  노래주점: 'from-purple-800 via-violet-900 to-zinc-950',
+  유흥주점: 'from-blue-800 via-indigo-900 to-zinc-950',
+  나이트: 'from-pink-800 via-rose-900 to-zinc-950',
+  호스트바: 'from-emerald-800 via-teal-900 to-zinc-950',
+  일반: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  기타: 'from-zinc-700 via-zinc-800 to-zinc-950',
 };
 
 export default function ImageSlider({ images, name, category }: ImageSliderProps) {

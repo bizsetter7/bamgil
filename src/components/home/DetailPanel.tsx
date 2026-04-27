@@ -10,19 +10,14 @@ import {
 import { maskName } from '@/lib/maskName';
 import { formatPhone } from '@/lib/formatPhone';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
-  night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
-};
-
 const CATEGORY_GRADIENTS: Record<string, string> = {
-  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
-  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
-  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
-  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
-  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
-  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
-  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  룸살롱: 'from-amber-800 via-orange-900 to-zinc-950',
+  노래주점: 'from-purple-800 via-violet-900 to-zinc-950',
+  유흥주점: 'from-blue-800 via-indigo-900 to-zinc-950',
+  나이트: 'from-pink-800 via-rose-900 to-zinc-950',
+  호스트바: 'from-emerald-800 via-teal-900 to-zinc-950',
+  일반: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  기타: 'from-zinc-700 via-zinc-800 to-zinc-950',
 };
 
 const REGION_LABELS: Record<string, string> = {
@@ -151,7 +146,7 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
             {/* 카테고리 + 배지 */}
             <div className="px-4 pt-2 flex items-center justify-between">
               <span className="text-xs text-zinc-500">
-                {CATEGORY_LABELS[business.category] ?? business.category}
+                {business.category}
               </span>
               {isPremium && (
                 <span className="flex items-center gap-1 text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full">

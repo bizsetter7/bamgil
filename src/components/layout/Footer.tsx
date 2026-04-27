@@ -17,9 +17,9 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">서비스</h4>
             <ul className="space-y-2 text-sm text-zinc-500">
               <li><Link href="/" className="hover:text-white">업소 찾기</Link></li>
-              <li><Link href="/?category=room_salon" className="hover:text-white">룸살롱</Link></li>
-              <li><Link href="/?category=karaoke_bar" className="hover:text-white">노래방</Link></li>
-              <li><Link href="/?category=bar" className="hover:text-white">바</Link></li>
+              <li><Link href={`/?category=${encodeURIComponent('룸살롱')}`} className="hover:text-white">룸살롱</Link></li>
+              <li><Link href={`/?category=${encodeURIComponent('노래주점')}`} className="hover:text-white">노래방</Link></li>
+              <li><Link href={`/?category=${encodeURIComponent('유흥주점')}`} className="hover:text-white">바</Link></li>
             </ul>
           </div>
 

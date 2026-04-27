@@ -13,10 +13,6 @@ import {
 } from 'lucide-react';
 import { formatPhone } from '@/lib/formatPhone';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
-  night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
-};
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -41,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ businessI
   if (!business) return { title: '업소 정보를 찾을 수 없습니다' };
 
   const region = REGION_LABELS[business.region_code] || business.region_code;
-  const category = CATEGORY_LABELS[business.category] || business.category;
+  const category = business.category;
   const title = `${business.name} - ${region} ${category} 추천 | 밤길`;
   const description = `${region} ${business.name} (${category})의 상세 정보, 영업시간, 메뉴, 주차 여부를 확인하세요. 밤길이 검증한 안전한 업소입니다.`;
 
@@ -107,7 +103,7 @@ export default async function BusinessDetailPage({
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3">
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
               <ShieldCheck size={13} className="shrink-0" />
-              <span>영업허가 확인 &middot; 합법적인 <span className="text-white">{CATEGORY_LABELS[business.category] ?? '업소'}</span></span>
+              <span>영업허가 확인 &middot; 합법적인 <span className="text-white">{business.category}</span></span>
             </div>
           </div>
         </div>
@@ -118,7 +114,7 @@ export default async function BusinessDetailPage({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-gray-500">
-                {CATEGORY_LABELS[business.category] ?? business.category}
+                {business.category}
               </span>
               <span className="text-[10px] text-gray-400 font-black bg-gray-100 border border-gray-200 px-2 py-0.5 rounded flex items-center gap-1">
                 <Zap size={10} className="text-gray-400" />

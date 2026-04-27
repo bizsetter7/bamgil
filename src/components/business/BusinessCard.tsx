@@ -9,34 +9,24 @@ const REGION_LABELS: Record<string, string> = {
   other: '기타',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  room_salon: '룸살롱',
-  karaoke_bar: '노래방',
-  bar: '바/주점',
-  night_club: '나이트',
-  hostbar: '호스트바',
-  general: '일반',
-  other: '기타',
-};
-
 const CATEGORY_COLORS: Record<string, string> = {
-  room_salon: 'text-amber-500 bg-amber-500/10',
-  karaoke_bar: 'text-purple-400 bg-purple-500/10',
-  bar: 'text-blue-400 bg-blue-500/10',
-  night_club: 'text-pink-400 bg-pink-500/10',
-  hostbar: 'text-emerald-400 bg-emerald-500/10',
-  general: 'text-zinc-400 bg-zinc-500/10',
-  other: 'text-zinc-400 bg-zinc-500/10',
+  룸살롱: 'text-amber-500 bg-amber-500/10',
+  노래주점: 'text-purple-400 bg-purple-500/10',
+  유흥주점: 'text-blue-400 bg-blue-500/10',
+  나이트: 'text-pink-400 bg-pink-500/10',
+  호스트바: 'text-emerald-400 bg-emerald-500/10',
+  일반: 'text-zinc-400 bg-zinc-500/10',
+  기타: 'text-zinc-400 bg-zinc-500/10',
 };
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
-  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
-  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
-  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
-  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
-  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
-  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
-  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  룸살롱: 'from-amber-800 via-orange-900 to-zinc-950',
+  노래주점: 'from-purple-800 via-violet-900 to-zinc-950',
+  유흥주점: 'from-blue-800 via-indigo-900 to-zinc-950',
+  나이트: 'from-pink-800 via-rose-900 to-zinc-950',
+  호스트바: 'from-emerald-800 via-teal-900 to-zinc-950',
+  일반: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  기타: 'from-zinc-700 via-zinc-800 to-zinc-950',
 };
 
 interface BusinessCardProps {
@@ -58,7 +48,7 @@ interface BusinessCardProps {
 export default function BusinessCard({ business, compact = false, selected = false, onSelect }: BusinessCardProps) {
   const categoryColor =
     CATEGORY_COLORS[business.category] ?? 'text-zinc-400 bg-zinc-500/10';
-  const categoryLabel = CATEGORY_LABELS[business.category] ?? business.category;
+  const categoryLabel = business.category;
   const categoryGradient =
     CATEGORY_GRADIENTS[business.category] ?? 'from-zinc-700 via-zinc-800 to-zinc-950';
   const firstChar = business.name?.[0] ?? '?';

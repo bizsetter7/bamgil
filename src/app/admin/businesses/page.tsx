@@ -13,10 +13,6 @@ const REGION_LABELS: Record<string, string> = {
   gyeongbuk: '경상북도', jeju: '제주', other: '기타',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  room_salon: '룸살롱', karaoke_bar: '노래주점', bar: '유흥주점',
-  night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
-};
 
 export default function BusinessesAdminPage() {
   const supabase = createBrowserClient(
@@ -162,7 +158,7 @@ export default function BusinessesAdminPage() {
                 </div>
                 <div className="flex items-center gap-4 text-[11px] text-zinc-500">
                   <span className="flex items-center gap-1"><MapPin size={10} />{REGION_LABELS[b.region_code] || b.region_code}</span>
-                  <span>{CATEGORY_LABELS[b.category] || b.category}</span>
+                  <span>{b.category}</span>
                   {b.phone && <span className="flex items-center gap-1"><Phone size={10} />{formatPhone(b.phone)}</span>}
                   {b.lat && <span className="text-green-500">📍 좌표 있음</span>}
                   {!b.lat && <span className="text-amber-500">⚠ 좌표 없음</span>}
