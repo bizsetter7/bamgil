@@ -29,6 +29,7 @@ export default function KakaoMapClient({
   businesses,
   fullscreen = false,
   onLoad,
+  onMarkerClick,
 }: {
   businesses: Business[];
   fullscreen?: boolean;
