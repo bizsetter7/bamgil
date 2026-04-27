@@ -27,11 +27,18 @@ export default function ImageSlider({ images, name, category }: ImageSliderProps
   // 이미지 없으면 텍스트 플레이스홀더
   if (images.length === 0) {
     return (
-      <div className={`w-full h-72 bg-gradient-to-b ${gradient} relative overflow-hidden flex items-end`}>
-        <span className="absolute inset-0 flex items-center justify-center text-white/5 font-black select-none leading-none" style={{ fontSize: '14rem' }}>{firstChar}</span>
-        <div className="relative z-10 w-full px-4 pb-4 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+      <div className={`w-full h-72 bg-gradient-to-b ${gradient} relative overflow-hidden flex items-center justify-center`}>
+        {/* 배경 첫 글자 워터마크 */}
+        <span
+          className="absolute inset-0 flex items-center justify-center text-white/5 font-black select-none leading-none pointer-events-none"
+          style={{ fontSize: '14rem' }}
+        >
+          {firstChar}
+        </span>
+        {/* 중앙 텍스트 (검증 배지와 겹치지 않도록 상단 1/3 위치) */}
+        <div className="relative z-10 text-center px-6 -mt-8">
           <p className="text-white font-black text-2xl leading-tight drop-shadow-lg">{name}</p>
-          <p className="text-white/40 text-xs font-bold mt-0.5">사진을 준비 중입니다</p>
+          <p className="text-white/50 text-xs font-bold mt-1.5 tracking-wide">사진을 준비 중입니다</p>
         </div>
       </div>
     );
