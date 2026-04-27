@@ -29,6 +29,16 @@ function maskName(name: string): string {
   return name[0] + 'O' + name.slice(2);
 }
 
+/** 민감번호 마스킹: 끝 2자리를 **로 치환
+ *  303-28-06100 → 303-28-061**  /  제2023-서울강남-01234호 → 제2023-서울강남-012**호 */
+function maskSensitiveNumber(value: string): string {
+  if (!value || value.length < 3) return value;
+  // 끝의 숫자·영문 2글자를 **로 치환 (후행 한글 제외)
+  const match = value.match(/^([\s\S]*)(.{2})([가-힣]*)$/);
+  if (!match) return value.slice(0, -2) + '**';
+  return match[1] + '**' + match[3];
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ businessId: string }> }): Promise<Metadata> {
   const { businessId } = await params;
   const supabase = await createClient();
@@ -103,7 +113,7 @@ export default async function BusinessDetailPage({
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3">
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
               <ShieldCheck size={13} className="shrink-0" />
-              <span>영업허가 확인 &middot; 합법적인 <span className="text-white">{business.category}</span></span>
+              <span>영업허가 확인 &middot; 합법적인 인증업체</span>
             </div>
           </div>
         </div>
@@ -114,7 +124,7 @@ export default async function BusinessDetailPage({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-gray-500">
-                {business.category}
+                {REGION_LABELS[business.region_code] ?? business.region_code} · {business.category}
               </span>
               <span className="text-[10px] text-gray-400 font-black bg-gray-100 border border-gray-200 px-2 py-0.5 rounded flex items-center gap-1">
                 <Zap size={10} className="text-gray-400" />
@@ -164,11 +174,8 @@ export default async function BusinessDetailPage({
           {business.manager_phone && (
             <div className="flex items-center gap-2 text-gray-700 text-sm">
               <Phone size={15} className="shrink-0 text-gray-500" />
-              {business.manager_name && (
-                <span className="text-gray-600 font-medium">{maskName(business.manager_name)} 실장 ·</span>
-              )}
               <a href={`tel:${business.manager_phone}`} className="text-amber-600 font-bold hover:underline">
-                {formatPhone(business.manager_phone)} 전화
+                {formatPhone(business.manager_phone)}
               </a>
             </div>
           )}
@@ -262,7 +269,7 @@ export default async function BusinessDetailPage({
         )}
 
         {/* ── 기본 정보 ── */}
-        {(business.opened_at || business.room_count || business.floor_area || business.business_hours) && (
+        {(business.opened_at || business.room_count || business.floor_area || business.business_hours || (business as any).license_number || (business as any).business_reg_number) && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
             <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">기본 정보</h2>
             <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
@@ -292,6 +299,24 @@ export default async function BusinessDetailPage({
                 <div className="px-4 py-3 flex items-center justify-between">
                   <span className="text-gray-600 text-xs font-medium">면적</span>
                   <span className="text-gray-900 text-sm font-bold">{business.floor_area}</span>
+                </div>
+              )}
+              {(business as any).license_number && (
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <span className="text-gray-600 text-xs font-medium">영업허가번호</span>
+                  <span className="flex items-center gap-1.5 text-gray-900 text-sm font-bold">
+                    <Check size={12} className="text-emerald-500 shrink-0" />
+                    {maskSensitiveNumber((business as any).license_number)}
+                  </span>
+                </div>
+              )}
+              {(business as any).business_reg_number && (
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <span className="text-gray-600 text-xs font-medium">사업자번호</span>
+                  <span className="flex items-center gap-1.5 text-gray-900 text-sm font-bold">
+                    <Check size={12} className="text-emerald-500 shrink-0" />
+                    {maskSensitiveNumber((business as any).business_reg_number)}
+                  </span>
                 </div>
               )}
             </div>

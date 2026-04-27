@@ -284,7 +284,8 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                     <a
                       key={biz.id}
                       href={`/places/${biz.id}`}
-                      className="flex gap-3 px-4 py-3.5 active:bg-zinc-900/60 transition-colors"
+                      onClick={(e) => { e.preventDefault(); handleSelect(biz.id); }}
+                      className="flex gap-3 px-4 py-3.5 active:bg-zinc-900/60 transition-colors cursor-pointer"
                     >
                       {/* 썸네일 */}
                       <div className="shrink-0 w-[96px] h-[76px] rounded-xl overflow-hidden bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center relative">
@@ -353,7 +354,12 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             transition-all duration-300
           `}
         >
-          <KakaoMapClient businesses={mappable} fullscreen onLoad={(map) => { mapInstanceRef.current = map; }} />
+          <KakaoMapClient 
+            businesses={mappable} 
+            fullscreen 
+            onLoad={(map) => { mapInstanceRef.current = map; }}
+            onMarkerClick={(id) => handleSelect(id)}
+          />
         </div>
 
         {/* ─── 우측 상세 패널 (PC only, 선택 시 표시) ─── */}
@@ -364,6 +370,22 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             overflow-hidden
             transition-all duration-300 ease-in-out
             ${selectedId ? 'w-80 xl:w-96 opacity-100' : 'w-0 opacity-0'}
+          `}
+        >
+          {selectedId && (
+            <DetailPanel
+              businessId={selectedId}
+              onClose={() => setSelectedId(null)}
+            />
+          )}
+        </div>
+
+        {/* ─── 모바일 상세 패널 (전체화면 슬라이드-인) ─── */}
+        <div
+          className={`
+            md:hidden fixed inset-0 z-[100] bg-zinc-950
+            transition-transform duration-300 ease-in-out
+            ${selectedId ? 'translate-x-0' : 'translate-x-full'}
           `}
         >
           {selectedId && (

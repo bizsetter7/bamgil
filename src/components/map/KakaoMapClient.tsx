@@ -33,6 +33,7 @@ export default function KakaoMapClient({
   businesses: Business[];
   fullscreen?: boolean;
   onLoad?: (map: any) => void;
+  onMarkerClick?: (id: string) => void;
 }) {
-  return <KakaoMap businesses={businesses} fullscreen={fullscreen} onLoad={onLoad} />;
+  return <KakaoMap businesses={businesses} fullscreen={fullscreen} onLoad={onLoad} onMarkerClick={onMarkerClick} />;
 }

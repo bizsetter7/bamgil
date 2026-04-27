@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Phone, MessageSquare, UserCheck, Heart, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { Phone, MessageSquare, UserCheck, Heart } from 'lucide-react';
 
 interface BottomCtaBarProps {
   business: {
@@ -11,10 +10,10 @@ interface BottomCtaBarProps {
     manager_phone: string | null;
     kakao_url: string | null;
   };
-  isOwner: boolean;
+  isOwner?: boolean;
 }
 
-export default function BottomCtaBar({ business, isOwner }: BottomCtaBarProps) {
+export default function BottomCtaBar({ business }: BottomCtaBarProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
@@ -88,16 +87,6 @@ export default function BottomCtaBar({ business, isOwner }: BottomCtaBarProps) {
           <Heart size={18} className={isBookmarked ? 'fill-pink-500 text-pink-500' : 'text-gray-400'} />
           <span className={isBookmarked ? 'text-pink-500' : 'text-gray-500'}>찜하기</span>
         </button>
-
-        {/* 5. 관리자 */}
-        {isOwner && (
-          <Link
-            href={`/dashboard/businesses/${business.id}`}
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 text-sm font-bold transition-colors"
-          >
-            <Settings size={18} /> 관리자
-          </Link>
-        )}
         
       </div>
     </div>

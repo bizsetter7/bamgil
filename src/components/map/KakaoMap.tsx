@@ -17,6 +17,7 @@ interface KakaoMapProps {
   businesses: Business[];
   fullscreen?: boolean;
   onLoad?: (map: any) => void;
+  onMarkerClick?: (id: string) => void;
 }
 
 declare global {
@@ -28,7 +29,7 @@ declare global {
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
 
-export default function KakaoMap({ businesses, fullscreen = false, onLoad }: KakaoMapProps) {
+export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMarkerClick }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -95,7 +96,10 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad }: Kak
             });
             el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.25)'; });
             el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
-            el.addEventListener('click', () => router.push(`/places/${biz.id}`));
+            el.addEventListener('click', () => {
+              if (onMarkerClick) onMarkerClick(biz.id);
+              else router.push(`/places/${biz.id}`);
+            });
             new window.kakao.maps.CustomOverlay({ map, position, content: el, zIndex, yAnchor: 0.5 });
             bounds.extend(position);
           };

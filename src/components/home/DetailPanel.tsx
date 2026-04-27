@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   X, MapPin, Phone, Clock, ShieldCheck, Star, Check,
   ParkingCircle, Car, Navigation, Users, Building2,
-  MessageSquare, ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 import { maskName } from '@/lib/maskName';
 import { formatPhone } from '@/lib/formatPhone';
@@ -140,13 +140,13 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
             {/* 검증 배지 */}
             <div className="px-4 pt-3 flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold">
               <ShieldCheck size={12} className="shrink-0" />
-              <span>합법 검증 업소입니다.</span>
+              <span>영업허가 확인 · 합법적인 인증업체</span>
             </div>
 
             {/* 카테고리 + 배지 */}
             <div className="px-4 pt-2 flex items-center justify-between">
               <span className="text-xs text-zinc-500">
-                {business.category}
+                {REGION_LABELS[business.region_code] ?? business.region_code} · {business.category}
               </span>
               {isPremium && (
                 <span className="flex items-center gap-1 text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
@@ -188,7 +188,7 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
                       className="text-amber-500 font-bold"
                       onClick={() => logContact('call')}
                     >
-                      {formatPhone(business.manager_phone ?? business.phone)} 전화
+                      {formatPhone(business.manager_phone ?? business.phone)}
                     </a>
                   </div>
                 )}
@@ -274,16 +274,13 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
               </div>
             )}
 
-            {/* 상세 페이지 링크 */}
-            <div className="px-4 py-3 border-b border-zinc-800">
-              <a
-                href={`/places/${business.id}`}
-                className="flex items-center justify-between text-xs text-zinc-500 hover:text-white transition-colors group"
-              >
-                <span>전체 정보 보기 (지도, 길찾기 등)</span>
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </a>
-            </div>
+            {/* 업소 소개 */}
+            {business.description && (
+              <div className="px-4 py-3 border-b border-zinc-800">
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">업소 소개</p>
+                <p className="text-zinc-400 text-xs leading-relaxed">{business.description}</p>
+              </div>
+            )}
 
             <div className="h-4" />
           </>
