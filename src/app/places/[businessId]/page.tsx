@@ -141,37 +141,37 @@ export default async function BusinessDetailPage({
           <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">
             {business.name}
             {business.manager_name && (
-              <span className="text-gray-400 font-medium text-lg"> {maskName(business.manager_name)} 실장</span>
+              <span className="text-gray-600 font-medium text-lg"> {maskName(business.manager_name)} 실장</span>
             )}
           </h1>
 
           {/* 주소 */}
-          <div className="flex items-start gap-2 text-gray-500 text-sm">
-            <MapPin size={15} className="shrink-0 mt-0.5 text-gray-400" />
+          <div className="flex items-start gap-2 text-gray-700 text-sm">
+            <MapPin size={15} className="shrink-0 mt-0.5 text-gray-500" />
             <div>
               <span>{business.address ?? REGION_LABELS[business.region_code] ?? business.region_code}</span>
               {business.address_detail && (
-                <span className="text-gray-400"> {business.address_detail}</span>
+                <span className="text-gray-500"> {business.address_detail}</span>
               )}
             </div>
           </div>
 
           {/* 영업시간 */}
           {business.business_hours && (
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Clock size={15} className="shrink-0 text-gray-400" />
+            <div className="flex items-center gap-2 text-gray-700 text-sm">
+              <Clock size={15} className="shrink-0 text-gray-500" />
               <span>오늘 · {business.business_hours}</span>
             </div>
           )}
 
           {/* 전화 */}
           {business.manager_phone && (
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Phone size={15} className="shrink-0 text-gray-400" />
+            <div className="flex items-center gap-2 text-gray-700 text-sm">
+              <Phone size={15} className="shrink-0 text-gray-500" />
               {business.manager_name && (
-                <span className="text-gray-400">{maskName(business.manager_name)} 실장 ·</span>
+                <span className="text-gray-600 font-medium">{maskName(business.manager_name)} 실장 ·</span>
               )}
-              <a href={`tel:${business.manager_phone}`} className="text-amber-500 font-bold hover:underline">
+              <a href={`tel:${business.manager_phone}`} className="text-amber-600 font-bold hover:underline">
                 {formatPhone(business.manager_phone)} 전화
               </a>
             </div>
@@ -181,51 +181,51 @@ export default async function BusinessDetailPage({
         {/* ── 퀵 인포 그리드 (항상 표시) ── */}
         <div className="bg-white mx-0 px-4 py-5 grid grid-cols-5 gap-2 border-b border-gray-100">
           {/* 룸 수 */}
-          <div className={`border rounded-2xl p-3 text-center ${business.room_count ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-            <Building2 size={18} className={`mx-auto mb-1 ${business.room_count ? 'text-amber-500' : 'text-gray-300'}`} />
-            <p className={`font-black text-sm ${business.room_count ? 'text-gray-900' : 'text-gray-300'}`}>
+          <div className={`border rounded-2xl p-3 text-center ${business.room_count ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+            <Building2 size={18} className={`mx-auto mb-1 ${business.room_count ? 'text-amber-500' : 'text-gray-400'}`} />
+            <p className={`font-black text-sm ${business.room_count ? 'text-gray-900' : 'text-gray-500'}`}>
               {business.room_count ? `${business.room_count}개` : '-'}
             </p>
-            <p className="text-gray-400 text-[9px] mt-0.5">룸</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 font-bold">룸</p>
           </div>
           {/* 연령대 */}
-          <div className={`border rounded-2xl p-3 text-center ${business.age_range ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-            <Users size={18} className={`mx-auto mb-1 ${business.age_range ? 'text-amber-500' : 'text-gray-300'}`} />
-            <p className={`font-black text-sm leading-tight ${business.age_range ? 'text-gray-900' : 'text-gray-300'}`}>
+          <div className={`border rounded-2xl p-3 text-center ${business.age_range ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+            <Users size={18} className={`mx-auto mb-1 ${business.age_range ? 'text-amber-500' : 'text-gray-400'}`} />
+            <p className={`font-black text-sm leading-tight ${business.age_range ? 'text-gray-900' : 'text-gray-500'}`}>
               {business.age_range ?? '-'}
             </p>
-            <p className="text-gray-400 text-[9px] mt-0.5">연령대</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 font-bold">연령대</p>
           </div>
           {/* 주차 */}
-          <div className={`border rounded-2xl p-3 text-center ${business.has_parking ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-            <ParkingCircle size={18} className={`mx-auto mb-1 ${business.has_parking ? 'text-emerald-500' : 'text-gray-300'}`} />
-            <p className={`font-black text-sm ${business.has_parking ? 'text-gray-900' : 'text-gray-300'}`}>
+          <div className={`border rounded-2xl p-3 text-center ${business.has_parking ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+            <ParkingCircle size={18} className={`mx-auto mb-1 ${business.has_parking ? 'text-emerald-500' : 'text-gray-400'}`} />
+            <p className={`font-black text-sm ${business.has_parking ? 'text-gray-900' : 'text-gray-500'}`}>
               {business.has_parking ? '가능' : '불가'}
             </p>
-            <p className="text-gray-400 text-[9px] mt-0.5">주차</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 font-bold">주차</p>
           </div>
           {/* 발렛 */}
-          <div className={`border rounded-2xl p-3 text-center ${business.has_valet ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-            <Car size={18} className={`mx-auto mb-1 ${business.has_valet ? 'text-blue-500' : 'text-gray-300'}`} />
-            <p className={`font-black text-sm ${business.has_valet ? 'text-gray-900' : 'text-gray-300'}`}>
+          <div className={`border rounded-2xl p-3 text-center ${business.has_valet ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+            <Car size={18} className={`mx-auto mb-1 ${business.has_valet ? 'text-blue-500' : 'text-gray-400'}`} />
+            <p className={`font-black text-sm ${business.has_valet ? 'text-gray-900' : 'text-gray-500'}`}>
               {business.has_valet ? '가능' : '불가'}
             </p>
-            <p className="text-gray-400 text-[9px] mt-0.5">발렛</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 font-bold">발렛</p>
           </div>
           {/* 픽업 */}
-          <div className={`border rounded-2xl p-3 text-center ${business.has_pickup ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
-            <Navigation size={18} className={`mx-auto mb-1 ${business.has_pickup ? 'text-purple-500' : 'text-gray-300'}`} />
-            <p className={`font-black text-sm ${business.has_pickup ? 'text-gray-900' : 'text-gray-300'}`}>
+          <div className={`border rounded-2xl p-3 text-center ${business.has_pickup ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+            <Navigation size={18} className={`mx-auto mb-1 ${business.has_pickup ? 'text-purple-500' : 'text-gray-400'}`} />
+            <p className={`font-black text-sm ${business.has_pickup ? 'text-gray-900' : 'text-gray-500'}`}>
               {business.has_pickup ? '가능' : '불가'}
             </p>
-            <p className="text-gray-400 text-[9px] mt-0.5">픽업</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 font-bold">픽업</p>
           </div>
         </div>
 
         {/* ── 대표 메뉴 ── */}
         {menuItems.length > 0 && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">대표 메뉴</h2>
+            <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">대표 메뉴</h2>
             <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
               {menuItems.map((item, i) => (
                 <div key={i} className="px-4 py-4">
@@ -247,7 +247,7 @@ export default async function BusinessDetailPage({
         {/* ── 별도 요금 ── */}
         {extraFees.length > 0 && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">별도 요금</h2>
+            <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">별도 요금</h2>
             <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
               {extraFees.map((fee, i) => (
                 <div key={i} className="px-4 py-3 flex items-center justify-between">
@@ -268,17 +268,17 @@ export default async function BusinessDetailPage({
         {/* ── 기본 정보 ── */}
         {(business.opened_at || business.room_count || business.floor_area || business.business_hours) && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">기본 정보</h2>
+            <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">기본 정보</h2>
             <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
               {business.business_hours && (
                 <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-gray-500 text-xs">영업시간</span>
+                  <span className="text-gray-600 text-xs font-medium">영업시간</span>
                   <span className="text-gray-900 text-sm font-bold">{business.business_hours}</span>
                 </div>
               )}
               {business.opened_at && (
                 <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-gray-500 text-xs">개업일</span>
+                  <span className="text-gray-600 text-xs font-medium">개업일</span>
                   <span className="text-gray-900 text-sm font-bold">
                     {new Date(business.opened_at).toLocaleDateString('ko-KR', {
                       year: 'numeric', month: 'long', day: 'numeric',
@@ -288,13 +288,13 @@ export default async function BusinessDetailPage({
               )}
               {business.room_count && (
                 <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-gray-500 text-xs">룸 수</span>
+                  <span className="text-gray-600 text-xs font-medium">룸 수</span>
                   <span className="text-gray-900 text-sm font-bold">총 {business.room_count}개</span>
                 </div>
               )}
               {business.floor_area && (
                 <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-gray-500 text-xs">면적</span>
+                  <span className="text-gray-600 text-xs font-medium">면적</span>
                   <span className="text-gray-900 text-sm font-bold">{business.floor_area}</span>
                 </div>
               )}
@@ -305,7 +305,7 @@ export default async function BusinessDetailPage({
         {/* ── 합법 업소 설명 ── */}
         {business.description && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <p className="text-gray-700 text-sm leading-relaxed">
               <span className="text-gray-900 font-bold">{business.name}</span>은{' '}
               {business.description}
             </p>
@@ -315,7 +315,7 @@ export default async function BusinessDetailPage({
         {/* ── 사진 더보기 그리드 ── */}
         {images.length > 1 && (
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">사진</h2>
+            <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">사진</h2>
             <div className="grid grid-cols-3 gap-1.5">
               {images.slice(0, 6).map((img, i) => (
                 <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
@@ -335,7 +335,7 @@ export default async function BusinessDetailPage({
         {/* ── 미니 지도 ── */}
         {business.lat && business.lng && (
           <div className="bg-white px-4 pt-5 pb-6 mt-2 border-b border-gray-100">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">위치</h2>
+            <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">위치</h2>
             <MiniKakaoMap lat={business.lat} lng={business.lng} name={business.name} />
             {/* 주소 + 복사 */}
             <div className="mt-3 flex items-center gap-2 px-1">
