@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Phone, MessageSquare, Star, Building2 } from 'lucide-react';
+import { MapPin, Phone, MessageSquare, Star } from 'lucide-react';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -29,6 +29,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: 'text-zinc-400 bg-zinc-500/10',
 };
 
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
+  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
+  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
+  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
+  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
+  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+};
+
 interface BusinessCardProps {
   business: {
     id: string;
@@ -49,6 +59,9 @@ export default function BusinessCard({ business, compact = false, selected = fal
   const categoryColor =
     CATEGORY_COLORS[business.category] ?? 'text-zinc-400 bg-zinc-500/10';
   const categoryLabel = CATEGORY_LABELS[business.category] ?? business.category;
+  const categoryGradient =
+    CATEGORY_GRADIENTS[business.category] ?? 'from-zinc-700 via-zinc-800 to-zinc-950';
+  const firstChar = business.name?.[0] ?? '?';
 
   /* ── 사이드패널 컴팩트 카드 ── */
   if (compact) {
@@ -57,12 +70,15 @@ export default function BusinessCard({ business, compact = false, selected = fal
         ${selected ? 'bg-zinc-800 border border-zinc-700' : 'hover:bg-zinc-900 border border-transparent'}`}
       >
         {/* 썸네일 */}
-        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center transition-colors">
+        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center transition-colors">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-[9px] font-black text-zinc-500 leading-tight text-center">입점<br />문의</span>
+            <div className={`w-full h-full bg-gradient-to-br ${categoryGradient} flex items-center justify-center relative overflow-hidden`}>
+              <span className="absolute text-white/10 font-black text-3xl select-none leading-none">{firstChar}</span>
+              <span className="relative text-white font-black text-base leading-none">{firstChar}</span>
+            </div>
           )}
         </div>
 
@@ -108,8 +124,13 @@ export default function BusinessCard({ business, compact = false, selected = fal
             className="w-full h-36 object-cover"
           />
         ) : (
-          <div className="w-full h-36 bg-zinc-800/50 flex items-center justify-center text-zinc-700 group-hover:text-zinc-600 transition-colors">
-            <Building2 size={36} />
+          <div className={`w-full h-36 bg-gradient-to-br ${categoryGradient} relative overflow-hidden flex items-center justify-center`}>
+            <span className="absolute text-white/5 font-black select-none leading-none" style={{ fontSize: '6rem' }}>{firstChar}</span>
+            <div className="relative z-10 text-center px-4">
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-1">{categoryLabel}</p>
+              <h3 className="text-white font-black text-lg leading-tight drop-shadow-lg line-clamp-2">{business.name}</h3>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/30 to-transparent" />
           </div>
         )}
 

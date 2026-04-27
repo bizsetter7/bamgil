@@ -94,7 +94,7 @@ export default async function BusinessDetailPage({
       <div className="max-w-2xl mx-auto">
         {/* ── 이미지 슬라이더 (뒤로가기 오버레이 포함) ── */}
         <div className="relative">
-          <ImageSlider images={images} name={business.name} />
+          <ImageSlider images={images} name={business.name} category={business.category} />
           {/* 뒤로가기 — 이미지 위 오버레이 */}
           <Link
             href="/"

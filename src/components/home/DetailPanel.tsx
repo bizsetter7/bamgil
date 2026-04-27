@@ -15,6 +15,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   night_club: '나이트', hostbar: '호스트바', general: '일반', other: '기타',
 };
 
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
+  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
+  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
+  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
+  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
+  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+};
+
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
   busan: '부산', daegu: '대구', daejeon: '대전', gwangju: '광주', ulsan: '울산',
@@ -124,8 +134,11 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
                 className="w-full h-40 object-cover"
               />
             ) : (
-              <div className="w-full h-32 bg-zinc-900 flex items-center justify-center text-zinc-700">
-                <Building2 size={32} />
+              <div className={`w-full h-32 bg-gradient-to-b ${CATEGORY_GRADIENTS[business.category] ?? 'from-zinc-700 via-zinc-800 to-zinc-950'} relative overflow-hidden flex items-end`}>
+                <span className="absolute inset-0 flex items-center justify-center text-white/5 font-black select-none" style={{ fontSize: '7rem', lineHeight: 1 }}>{business.name[0]}</span>
+                <div className="relative z-10 w-full px-3 pb-2 pt-8 bg-gradient-to-t from-black/50 to-transparent">
+                  <p className="text-white font-black text-base leading-tight drop-shadow-lg truncate">{business.name}</p>
+                </div>
               </div>
             )}
 

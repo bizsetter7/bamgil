@@ -1,23 +1,37 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageSliderProps {
   images: string[];
   name: string;
+  category?: string;
 }
 
-export default function ImageSlider({ images, name }: ImageSliderProps) {
-  const [current, setCurrent] = useState(0);
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  room_salon: 'from-amber-800 via-orange-900 to-zinc-950',
+  karaoke_bar: 'from-purple-800 via-violet-900 to-zinc-950',
+  bar: 'from-blue-800 via-indigo-900 to-zinc-950',
+  night_club: 'from-pink-800 via-rose-900 to-zinc-950',
+  hostbar: 'from-emerald-800 via-teal-900 to-zinc-950',
+  general: 'from-zinc-700 via-zinc-800 to-zinc-950',
+  other: 'from-zinc-700 via-zinc-800 to-zinc-950',
+};
 
-  // 이미지 없으면 플레이스홀더
+export default function ImageSlider({ images, name, category }: ImageSliderProps) {
+  const [current, setCurrent] = useState(0);
+  const gradient = CATEGORY_GRADIENTS[category ?? ''] ?? 'from-zinc-700 via-zinc-800 to-zinc-950';
+  const firstChar = name?.[0] ?? '?';
+
+  // 이미지 없으면 텍스트 플레이스홀더
   if (images.length === 0) {
     return (
-      <div className="w-full h-72 bg-zinc-900 flex items-center justify-center text-zinc-700">
-        <div className="flex flex-col items-center gap-2">
-          <Building2 size={48} />
-          <p className="text-xs text-zinc-600">사진 없음</p>
+      <div className={`w-full h-72 bg-gradient-to-b ${gradient} relative overflow-hidden flex items-end`}>
+        <span className="absolute inset-0 flex items-center justify-center text-white/5 font-black select-none leading-none" style={{ fontSize: '14rem' }}>{firstChar}</span>
+        <div className="relative z-10 w-full px-4 pb-4 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+          <p className="text-white font-black text-2xl leading-tight drop-shadow-lg">{name}</p>
+          <p className="text-white/40 text-xs font-bold mt-0.5">사진을 준비 중입니다</p>
         </div>
       </div>
     );
