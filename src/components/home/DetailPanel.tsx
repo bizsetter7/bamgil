@@ -145,9 +145,14 @@ export default function DetailPanel({ businessId, onClose }: DetailPanelProps) {
 
             {/* 카테고리 + 배지 */}
             <div className="px-4 pt-2 flex items-center justify-between">
-              <span className="text-xs text-zinc-500">
-                {REGION_LABELS[business.region_code] ?? business.region_code} · {business.category}
-              </span>
+              {(() => {
+                const region = REGION_LABELS[business.region_code] ?? business.region_code;
+                const sub = business.address ? (business.address.trim().split(/\s+/)[1] ?? null) : null;
+                const loc = sub ? `${region} ${sub}` : region;
+                return (
+                  <span className="text-xs text-zinc-500">{loc} · {business.category}</span>
+                );
+              })()}
               {isPremium && (
                 <span className="flex items-center gap-1 text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
                   <Star size={8} fill="white" /> 프리미엄

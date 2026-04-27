@@ -124,7 +124,11 @@ export default async function BusinessDetailPage({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-gray-500">
-                {REGION_LABELS[business.region_code] ?? business.region_code} · {business.category}
+                {(() => {
+                  const region = REGION_LABELS[business.region_code] ?? business.region_code;
+                  const sub = business.address ? (business.address.trim().split(/\s+/)[1] ?? null) : null;
+                  return sub ? `${region} ${sub} · ${business.category}` : `${region} · ${business.category}`;
+                })()}
               </span>
               <span className="text-[10px] text-gray-400 font-black bg-gray-100 border border-gray-200 px-2 py-0.5 rounded flex items-center gap-1">
                 <Zap size={10} className="text-gray-400" />

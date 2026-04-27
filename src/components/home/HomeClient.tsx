@@ -86,7 +86,8 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
     return result;
   }, [businesses, searchQuery, selectedSubRegions]);
 
-  const mappable = filtered.filter((b) => b.lat && b.lng);
+  // lat/lng 있거나, address만 있어도 KakaoMap geocoder가 핀 추가 가능
+  const mappable = filtered.filter((b) => (b.lat && b.lng) || !!b.address);
 
   const handleSelect = (id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
@@ -278,6 +279,9 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   const isPremium = activePlan === 'premium' || activePlan === 'elite';
                   const isStandard = activePlan === 'standard';
                   const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
+                  // address에서 두번째 단어(시/군/구) 추출 → "경기 수원시" 형태
+                  const subRegion = biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null;
+                  const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
                   const addressLine = biz.address ?? regionLabel;
 
                   return (
@@ -313,9 +317,9 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
                       {/* 텍스트 정보 */}
                       <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
-                        {/* 지역 + 카테고리 */}
+                        {/* 지역(+상세) + 카테고리 */}
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-zinc-500 font-medium">{regionLabel}</span>
+                          <span className="text-[10px] text-zinc-500 font-medium">{locationLabel}</span>
                           <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
                             {biz.category}
                           </span>
