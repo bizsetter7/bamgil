@@ -20,6 +20,7 @@ interface Business {
   name: string;
   lat: number | null;
   lng: number | null;
+  address?: string | null;
   category: string;
   subscriptions?: { plan: string; status: string }[] | null;
 }

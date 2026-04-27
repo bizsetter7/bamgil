@@ -8,6 +8,7 @@ interface Business {
   name: string;
   lat: number | null;
   lng: number | null;
+  address?: string | null;
   category: string;
   subscriptions?: { plan: string; status: string }[] | null;
 }
@@ -71,19 +72,12 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad }: Kak
           const bounds = new window.kakao.maps.LatLngBounds();
           let hasValidPins = false;
 
-          businesses.forEach((biz) => {
-            if (!biz.lat || !biz.lng) return;
+          const addMarker = (biz: Business, position: any) => {
             hasValidPins = true;
-
-            const position = new window.kakao.maps.LatLng(biz.lat, biz.lng);
-
-            // 티어 판별
             const sub = biz.subscriptions?.[0];
             const activePlan = sub?.status === 'active' ? sub.plan : null;
             const isPremium = activePlan === 'premium' || activePlan === 'elite';
             const isStandard = activePlan === 'standard';
-
-            // 티어별 핀 스타일
             const size   = isPremium ? 20 : isStandard ? 16 : 12;
             const bg     = isPremium ? '#f59e0b' : isStandard ? '#3b82f6' : '#71717a';
             const shadow = isPremium
@@ -92,7 +86,6 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad }: Kak
               ? '0 0 0 4px rgba(59,130,246,0.25),0 2px 6px rgba(0,0,0,0.4)'
               : '0 1px 4px rgba(0,0,0,0.4)';
             const zIndex = isPremium ? 5 : isStandard ? 3 : 1;
-
             const el = document.createElement('div');
             Object.assign(el.style, {
               width: `${size}px`, height: `${size}px`,
@@ -103,15 +96,37 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad }: Kak
             el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.25)'; });
             el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
             el.addEventListener('click', () => router.push(`/places/${biz.id}`));
-
-            new window.kakao.maps.CustomOverlay({
-              map, position, content: el, zIndex, yAnchor: 0.5,
-            });
-
+            new window.kakao.maps.CustomOverlay({ map, position, content: el, zIndex, yAnchor: 0.5 });
             bounds.extend(position);
+          };
+
+          const geocoder = new window.kakao.maps.services.Geocoder();
+
+          const geocodeAndAdd = (biz: Business) => {
+            const addr = biz.address;
+            if (!addr) return;
+            geocoder.addressSearch(addr, (result: any[], status: string) => {
+              if (status === window.kakao.maps.services.Status.OK && result[0]) {
+                const pos = new window.kakao.maps.LatLng(
+                  parseFloat(result[0].y),
+                  parseFloat(result[0].x)
+                );
+                addMarker(biz, pos);
+                if (hasValidPins) map.setBounds(bounds);
+              }
+            });
+          };
+
+          businesses.forEach((biz) => {
+            if (biz.lat && biz.lng) {
+              const position = new window.kakao.maps.LatLng(biz.lat, biz.lng);
+              addMarker(biz, position);
+              return;
+            }
+            if (biz.address) geocodeAndAdd(biz);
           });
 
-          // 업소 있으면 업소 중심으로, 없으면 현재 위치 중심 유지
+          // 좌표가 있는 업소만 즉시 bounds 적용 (geocode는 비동기로 처리됨)
           if (hasValidPins) map.setBounds(bounds);
         });
       } catch (e) {
