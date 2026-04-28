@@ -12,6 +12,7 @@ import {
   Users, Building2, Flag, Copy, Zap,
 } from 'lucide-react';
 import { formatPhone } from '@/lib/formatPhone';
+import { getTodayHours } from '@/lib/businessHours';
 
 
 const REGION_LABELS: Record<string, string> = {
@@ -167,10 +168,10 @@ export default async function BusinessDetailPage({
           </div>
 
           {/* 영업시간 */}
-          {business.business_hours && (
+          {business.business_hours && getTodayHours(business.business_hours) && (
             <div className="flex items-center gap-2 text-gray-700 text-sm">
               <Clock size={15} className="shrink-0 text-gray-500" />
-              <span>오늘 · {business.business_hours}</span>
+              <span>{getTodayHours(business.business_hours)}</span>
             </div>
           )}
 
@@ -277,10 +278,10 @@ export default async function BusinessDetailPage({
           <div className="bg-white px-4 py-5 mt-2 border-b border-gray-100">
             <h2 className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">기본 정보</h2>
             <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
-              {business.business_hours && (
+              {business.business_hours && getTodayHours(business.business_hours) && (
                 <div className="px-4 py-3 flex items-center justify-between">
                   <span className="text-gray-600 text-xs font-medium">영업시간</span>
-                  <span className="text-gray-900 text-sm font-bold">{business.business_hours}</span>
+                  <span className="text-gray-900 text-sm font-bold">{getTodayHours(business.business_hours)}</span>
                 </div>
               )}
               {business.opened_at && (

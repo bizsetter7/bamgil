@@ -7,6 +7,7 @@ import BusinessCard from '@/components/business/BusinessCard';
 import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
 import { maskName } from '@/lib/maskName';
+import { getTodayHours } from '@/lib/businessHours';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -97,21 +98,21 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
 
       {/* ── 모바일 탭 바 ── */}
-      <div className="md:hidden flex border-b border-zinc-800 bg-zinc-950 shrink-0">
+      <div className="md:hidden flex border-b border-gray-200 bg-white shrink-0">
         <button
           onClick={() => setMobileTab('map')}
           className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-bold transition-colors
-            ${mobileTab === 'map' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-zinc-500'}`}
+            ${mobileTab === 'map' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-gray-400'}`}
         >
           <MapIcon size={16} /> 지도
         </button>
         <button
           onClick={() => setMobileTab('list')}
           className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-bold transition-colors
-            ${mobileTab === 'list' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-zinc-500'}`}
+            ${mobileTab === 'list' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-gray-400'}`}
         >
           <Grid size={16} /> 목록{' '}
-          <span className="bg-zinc-800 text-zinc-300 text-[10px] px-1.5 py-0.5 rounded-full">
+          <span className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-full">
             {filtered.length}
           </span>
         </button>
@@ -124,25 +125,25 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         <aside
           className={`
             flex-shrink-0 w-full md:w-72 xl:w-80
-            flex flex-col border-r border-zinc-800 bg-zinc-950 overflow-hidden
+            flex flex-col border-r border-gray-200 bg-white overflow-hidden
             ${mobileTab === 'map' ? 'hidden md:flex' : 'flex'}
           `}
         >
           {/* 검색 */}
-          <div className="p-3 border-b border-zinc-800 shrink-0">
+          <div className="p-3 border-b border-gray-200 shrink-0">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="업소명 또는 주소 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-8 pr-8 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-8 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
                 >
                   <X size={13} />
                 </button>
@@ -151,25 +152,25 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           </div>
 
           {/* 지역 필터 및 내 주변 */}
-          <div className="px-3 pt-2.5 pb-2 border-b border-zinc-800 shrink-0 space-y-1.5 flex items-center justify-between">
+          <div className="px-3 pt-2.5 pb-2 border-b border-gray-200 shrink-0 space-y-1.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-zinc-600 mr-1">
+              <div className="flex items-center gap-1.5 text-gray-400 mr-1">
                 <MapPin size={10} />
                 <span className="text-[9px] font-black uppercase tracking-widest">지역</span>
               </div>
-              <button 
+              <button
                 onClick={() => setRegionOverlayOpen(true)}
-                className="text-[11px] font-bold bg-zinc-900 border border-zinc-700 px-3 py-1.5 rounded-full hover:bg-zinc-800 transition-colors flex items-center gap-1 text-white"
+                className="text-[11px] font-bold bg-gray-100 border border-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-1 text-gray-700"
               >
-                {region ? (REGION_LABELS[region] || region) : '전체 지역'} 
+                {region ? (REGION_LABELS[region] || region) : '전체 지역'}
                 {selectedSubRegions.length > 0 && <span className="text-amber-500">+{selectedSubRegions.length}</span>}
-                <ChevronDown size={12} className="text-zinc-500 ml-1" />
+                <ChevronDown size={12} className="text-gray-400 ml-1" />
               </button>
             </div>
-            <button 
+            <button
               onClick={handleNearMe}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors shrink-0
-                ${nearMeActive ? 'bg-pink-600 border-pink-600 text-white' : 'border-zinc-700 text-zinc-400 hover:border-pink-500 hover:text-white'}`}
+                ${nearMeActive ? 'bg-pink-500 border-pink-500 text-white' : 'border-gray-300 text-gray-500 hover:border-pink-400 hover:text-pink-500'}`}
             >
               <Navigation size={12} /> 내 주변
             </button>
@@ -177,18 +178,18 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
           {/* 선택된 서브 지역 칩 */}
           {selectedSubRegions.length > 0 && (
-            <div className="px-3 pb-2 border-b border-zinc-800 shrink-0 flex flex-wrap gap-1 pt-1">
+            <div className="px-3 pb-2 border-b border-gray-200 shrink-0 flex flex-wrap gap-1 pt-1">
               {selectedSubRegions.map(sub => (
-                <div key={sub} className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[9px] font-black">
+                <div key={sub} className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[9px] font-black">
                   {sub}
                   <button onClick={() => setSelectedSubRegions(prev => prev.filter(s => s !== sub))}>
                     <X size={10} />
                   </button>
                 </div>
               ))}
-              <button 
+              <button
                 onClick={() => setSelectedSubRegions([])}
-                className="text-[9px] text-zinc-600 hover:text-zinc-400 font-bold ml-1"
+                className="text-[9px] text-gray-400 hover:text-gray-600 font-bold ml-1"
               >
                 초기화
               </button>
@@ -196,21 +197,21 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           )}
 
           {/* 카테고리 필터 */}
-          <div className="px-3 pt-2.5 pb-2.5 border-b border-zinc-800 shrink-0 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-zinc-600">
+          <div className="px-3 pt-2.5 pb-2.5 border-b border-gray-200 shrink-0 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-gray-400">
               <Filter size={10} />
               <span className="text-[9px] font-black uppercase tracking-widest">카테고리</span>
             </div>
             <div className="flex flex-wrap gap-1">
               <a href={`/${region ? `?region=${region}` : ''}`}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
-                  ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                  ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
                 전체
               </a>
               {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '일반', '기타'].map((cat) => (
                 <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
-                    ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                    ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
                   {cat}
                 </a>
               ))}
@@ -220,7 +221,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           {/* ── PC 업소 리스트 ── */}
           <div className="hidden md:flex flex-col flex-1 overflow-hidden">
             <div className="px-3 pt-2.5 pb-1 flex items-center justify-between shrink-0">
-              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
                 {filtered.length}개 업소
               </span>
               {searchQuery && (
@@ -229,7 +230,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             </div>
             {filtered.length === 0 ? (
               <div className="py-12 text-center px-4">
-                <p className="text-zinc-600 text-xs font-medium">검색 결과가 없습니다.</p>
+                <p className="text-gray-400 text-xs font-medium">검색 결과가 없습니다.</p>
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="text-amber-500 text-xs font-bold mt-2 hover:underline">
                     초기화
@@ -254,17 +255,17 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           {/* ── 모바일 밤맵 스타일 카드 리스트 ── */}
           <div className="md:hidden flex-1 overflow-y-auto">
             {/* 스티키 카운트 바 */}
-            <div className="sticky top-0 z-10 px-4 py-2.5 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-500">
+            <div className="sticky top-0 z-10 px-4 py-2.5 bg-white/95 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-500">
                 {filtered.length}개 업소
                 {searchQuery && <span className="text-amber-500 ml-1.5">&ldquo;{searchQuery}&rdquo;</span>}
               </span>
-              <span className="text-[10px] text-zinc-600 font-bold">등록순</span>
+              <span className="text-[10px] text-gray-400 font-bold">등록순</span>
             </div>
 
             {filtered.length === 0 ? (
               <div className="py-16 text-center px-4">
-                <p className="text-zinc-600 text-sm font-medium">검색 결과가 없습니다.</p>
+                <p className="text-gray-400 text-sm font-medium">검색 결과가 없습니다.</p>
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="text-amber-500 text-xs font-bold mt-2 hover:underline">
                     초기화
@@ -272,7 +273,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800/50">
+              <div className="divide-y divide-gray-100">
                 {filtered.map((biz) => {
                   const sub = biz.subscriptions?.[0];
                   const activePlan = sub?.status === 'active' ? sub.plan : null;
@@ -283,23 +284,24 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   const subRegion = biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null;
                   const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
                   const addressLine = biz.address ?? regionLabel;
+                  const todayHours = getTodayHours(biz.business_hours);
 
                   return (
                     <a
                       key={biz.id}
                       href={`/places/${biz.id}`}
                       onClick={(e) => { e.preventDefault(); handleSelect(biz.id); }}
-                      className="flex gap-3 px-4 py-3.5 active:bg-zinc-900/60 transition-colors cursor-pointer"
+                      className="flex gap-3 px-4 py-3.5 active:bg-gray-50 transition-colors cursor-pointer"
                     >
                       {/* 썸네일 */}
-                      <div className="shrink-0 w-[96px] h-[76px] rounded-xl overflow-hidden bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center relative">
+                      <div className="shrink-0 w-[96px] h-[76px] rounded-xl overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center relative">
                         {biz.cover_image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="flex flex-col items-center gap-1">
-                            <span className="text-[11px] font-black text-zinc-400 leading-tight text-center">입점<br />문의</span>
-                            <div className="w-8 h-px bg-zinc-600" />
+                            <span className="text-[11px] font-black text-gray-400 leading-tight text-center">입점<br />문의</span>
+                            <div className="w-8 h-px bg-gray-300" />
                           </div>
                         )}
                         {/* 티어 배지 */}
@@ -319,26 +321,26 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                       <div className="flex-1 min-w-0 py-0.5 space-y-0.5">
                         {/* 지역(+상세) + 카테고리 */}
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-zinc-500 font-medium">{locationLabel}</span>
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                          <span className="text-[10px] text-gray-500 font-medium">{locationLabel}</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
                             {biz.category}
                           </span>
                         </div>
                         {/* 업소명 */}
-                        <p className="text-white font-black text-[15px] leading-snug truncate">
+                        <p className="text-gray-900 font-black text-[15px] leading-snug truncate">
                           {biz.name}
                         </p>
                         {/* 실장명 */}
                         {biz.manager_name && (
-                          <p className="text-zinc-400 text-[11px]">{maskName(biz.manager_name)} 실장</p>
+                          <p className="text-gray-500 text-[11px]">{maskName(biz.manager_name)} 실장</p>
                         )}
                         {/* 영업시간 */}
-                        {biz.business_hours && (
-                          <p className="text-zinc-500 text-[10px] truncate">#{biz.business_hours}</p>
+                        {todayHours && (
+                          <p className="text-gray-400 text-[10px] truncate">{todayHours}</p>
                         )}
                         {/* 주소 */}
-                        {!biz.business_hours && (
-                          <p className="text-zinc-500 text-[10px] truncate">{addressLine}</p>
+                        {!todayHours && (
+                          <p className="text-gray-400 text-[10px] truncate">{addressLine}</p>
                         )}
                       </div>
                     </a>
@@ -370,7 +372,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         <div
           className={`
             hidden md:flex flex-col
-            border-l border-zinc-800 bg-zinc-950
+            border-l border-gray-200 bg-white
             overflow-hidden
             transition-all duration-300 ease-in-out
             ${selectedId ? 'w-80 xl:w-96 opacity-100' : 'w-0 opacity-0'}
@@ -387,7 +389,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         {/* ─── 모바일 상세 패널 (전체화면 슬라이드-인) ─── */}
         <div
           className={`
-            md:hidden fixed inset-0 z-[100] bg-zinc-950
+            md:hidden fixed inset-0 z-[100] bg-white
             transition-transform duration-300 ease-in-out
             ${selectedId ? 'translate-x-0' : 'translate-x-full'}
           `}
@@ -403,11 +405,11 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
       {/* ── 지역 선택 풀스크린 오버레이 ── */}
       {regionOverlayOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setRegionOverlayOpen(false)}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setRegionOverlayOpen(false)}>
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg text-white">지역 선택</h3>
-              <button onClick={() => setRegionOverlayOpen(false)} className="text-zinc-400 hover:text-white">
+              <h3 className="font-bold text-lg text-gray-900">지역 선택</h3>
+              <button onClick={() => setRegionOverlayOpen(false)} className="text-gray-400 hover:text-gray-700">
                 <X size={20} />
               </button>
             </div>
@@ -415,7 +417,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             {/* 1단계: 시/도 선택 */}
             {!selectedProvince ? (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                <a 
+                <a
                   href={`/${category ? `?category=${category}` : ''}`}
                   onClick={() => { setRegionOverlayOpen(false); setSelectedSubRegions([]); }}
                   className="py-2 px-2 text-center rounded-xl bg-amber-500 text-black font-bold text-sm"
@@ -423,10 +425,10 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   전체
                 </a>
                 {PROVINCES.map(p => (
-                  <button 
-                    key={p.key} 
+                  <button
+                    key={p.key}
                     onClick={() => setSelectedProvince(p.key)}
-                    className="py-2 px-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-bold text-zinc-300 transition-colors"
+                    className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-700 transition-colors"
                   >
                     {p.name}
                   </button>
@@ -435,18 +437,18 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             ) : (
               // 2단계: 구/군 선택
               <div>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-zinc-800">
-                  <button 
-                    onClick={() => setSelectedProvince(null)} 
-                    className="text-sm font-bold text-zinc-400 flex items-center gap-1 hover:text-white"
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                  <button
+                    onClick={() => setSelectedProvince(null)}
+                    className="text-sm font-bold text-gray-500 flex items-center gap-1 hover:text-gray-900"
                   >
-                    <ChevronDown size={14} className="rotate-90" /> 
+                    <ChevronDown size={14} className="rotate-90" />
                     {PROVINCES.find(p => p.key === selectedProvince)?.name}
                   </button>
-                  <a 
+                  <a
                     href={`/?region=${selectedProvince}${category ? `&category=${category}` : ''}`}
                     onClick={() => { setRegionOverlayOpen(false); setSelectedSubRegions([]); }}
-                    className="text-xs font-bold text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full"
+                    className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full"
                   >
                     전체 선택
                   </a>
@@ -455,32 +457,21 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   {(DISTRICTS[selectedProvince] || []).map(d => {
                     const isSelected = selectedSubRegions.includes(d);
                     return (
-                      <button 
-                        key={d} 
+                      <button
+                        key={d}
                         onClick={() => {
-                          // 오버레이에서는 선택 시 페이지 이동 (단순화: 해당 region에 서브지역 선택을 localStorage나 state로 관리)
-                          // 밤맵 방식: 시/도 선택 -> 페이지 이동하면서 해당 지역 띄움. 구/군 클릭 -> 해당 구/군만 필터링.
-                          // 현재 구조상 URL 파라미터는 시/도 (region). 서브필터는 state.
-                          // 따라서 시/도로 먼저 이동하고 서브필터 셋팅.
-                          // 여기서는 간단히 window.location.href 로 시/도 이동 + 서브필터 state 업데이트 (하지만 새로고침되므로 서브필터는 초기화됨).
-                          // UX 개선을 위해: 시/도가 이미 현재 region이면 바로 state만 업데이트. 아니면 이동?
-                          // 가장 좋은 건 쿼리파라미터로 서브지역을 넣는 것이지만, 현재 HomeClient 구조상 selectedSubRegions state 사용.
-                          
                           if (region === selectedProvince) {
-                            setSelectedSubRegions(prev => 
+                            setSelectedSubRegions(prev =>
                               prev.includes(d) ? prev.filter(s => s !== d) : [...prev, d]
                             );
                           } else {
-                            // 지역이 다르면 먼저 해당 지역으로 이동해야 함
                             window.location.href = `/?region=${selectedProvince}${category ? `&category=${category}` : ''}`;
-                            // 단, 이동 시 서브지역을 잃어버리게 되므로, 이 구현에서는 오버레이를 닫고 현재 region 내 필터링만 적용하는 것으로 간소화
-                            // 만약 지역이 같다면 필터 토글
                           }
                         }}
                         className={`py-2 px-2 rounded-xl text-sm font-bold transition-colors ${
-                          isSelected || (region !== selectedProvince && false)
+                          isSelected
                             ? 'bg-amber-500 text-black'
-                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         }`}
                       >
                         {d}
