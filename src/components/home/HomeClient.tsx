@@ -200,7 +200,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold border transition-all ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                 전체
               </a>
-              {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바'].map(cat => (
+              {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '홀덤펍'].map(cat => (
                 <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
                   className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold border transition-all ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                   {cat}
@@ -414,7 +414,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                   ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
                 전체
               </a>
-              {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '일반', '기타'].map((cat) => (
+              {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '홀덤펍', '일반', '기타'].map((cat) => (
                 <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
                     ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
