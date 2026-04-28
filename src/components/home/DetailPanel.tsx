@@ -11,6 +11,7 @@ import {
 import { maskName } from '@/lib/maskName';
 import { formatPhone } from '@/lib/formatPhone';
 import { getTodayHours } from '@/lib/businessHours';
+import MiniMap from '@/components/map/MiniMap';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
@@ -69,6 +70,14 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
   const [imgIdx, setImgIdx] = useState(0);
   const [hoursOpen, setHoursOpen] = useState(false);
 
+  // 잘못된 정보 제보 모달
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportContent, setReportContent] = useState('');
+  const [reportContact, setReportContact] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
+
   useEffect(() => {
     const supabase = createClient();
     setLoading(true);
@@ -84,6 +93,41 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessId, contactType: type }),
     }).catch(() => {});
+  };
+
+  const handleReportSubmit = async () => {
+    if (!reportReason) { alert('신고 사유를 선택해주세요.'); return; }
+    if (!reportContent.trim()) { alert('제보 내용을 입력해주세요.'); return; }
+    setReportSubmitting(true);
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId,
+          businessName: business?.name,
+          reason: reportReason,
+          content: reportContent,
+          contact: reportContact,
+        }),
+      });
+      if (res.ok) {
+        setReportDone(true);
+      } else {
+        alert('제보 전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    } catch {
+      alert('오류가 발생했습니다.');
+    }
+    setReportSubmitting(false);
+  };
+
+  const openReport = () => {
+    setReportReason('');
+    setReportContent('');
+    setReportContact('');
+    setReportDone(false);
+    setReportOpen(true);
   };
 
   const sub = business?.subscriptions?.[0];
@@ -248,7 +292,7 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { icon: Building2, label: '룸', value: business.room_count ? `${business.room_count}개` : '-', color: business.room_count ? 'text-amber-500' : 'text-gray-300' },
-                  { icon: Users, label: '집객원', value: '합법 입소', color: 'text-emerald-500' },
+                  { icon: Users, label: '집객원', value: '합법 업소', color: 'text-emerald-500' },
                   { icon: Users, label: '연령대', value: business.age_range ?? '-', color: business.age_range ? 'text-amber-500' : 'text-gray-300' },
                   { icon: ParkingCircle, label: '주차', value: business.has_parking ? '가능' : '불가', color: business.has_parking ? 'text-emerald-500' : 'text-gray-300' },
                   { icon: Car, label: '발렛', value: business.has_valet ? '가능' : '불가', color: business.has_valet ? 'text-blue-500' : 'text-gray-300' },
@@ -348,12 +392,12 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
 
             {/* ── 잘못된 정보 제보 ── */}
             <div className="bg-white px-4 py-3 mt-2 border-b border-gray-100">
-              <button className="w-full flex items-center justify-between group">
+              <button onClick={openReport} className="w-full flex items-center justify-between group">
                 <div className="flex items-center gap-2">
                   <AlertCircle size={14} className="text-gray-400" />
                   <span className="text-sm font-bold text-gray-700">잘못된 정보 제보</span>
                 </div>
-                <ChevronRight size={15} className="text-gray-300 group-hover:text-gray-500" />
+                <ChevronRight size={15} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
               </button>
               <p className="text-xs text-gray-400 mt-1 pl-6">이상이 있는 광고는 알려주세요. 빠르게 확인하겠습니다.</p>
             </div>
@@ -371,13 +415,19 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
             {/* ── 지도 + 길찾기 ── */}
             {business.address && (
               <div className="bg-white px-4 py-4 mt-2 border-b border-gray-100">
+                {/* 미니 카카오맵 */}
+                {business.lat && business.lng && (
+                  <div className="mb-3">
+                    <MiniMap lat={business.lat} lng={business.lng} name={business.name} />
+                  </div>
+                )}
                 {/* 주소 + 복사 */}
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin size={13} className="text-gray-400 shrink-0" />
-                  <p className="text-gray-600 text-xs flex-1 truncate">{business.address}{business.address_detail ? ` ${business.address_detail}` : ''}</p>
+                  <p className="text-gray-600 text-xs flex-1">{business.address}{business.address_detail ? ` ${business.address_detail}` : ''}</p>
                   <button
                     onClick={() => navigator.clipboard?.writeText(business.address ?? '')}
-                    className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-gray-700"
+                    className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-gray-700 shrink-0"
                   >
                     <Copy size={11} /> 복사
                   </button>
@@ -409,6 +459,133 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
           </>
         )}
       </div>
+
+      {/* ── 잘못된 정보 제보 모달 ── */}
+      {reportOpen && business && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setReportOpen(false)}>
+          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+
+            {/* 헤더 */}
+            <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-400" />
+                <span className="font-black text-gray-900">잘못된 정보 제보</span>
+              </div>
+              <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                <X size={18} />
+              </button>
+            </div>
+
+            {reportDone ? (
+              /* 완료 화면 */
+              <div className="px-5 py-10 text-center">
+                <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check size={28} className="text-emerald-500" />
+                </div>
+                <p className="font-black text-gray-900 text-lg mb-2">제보가 접수되었습니다</p>
+                <p className="text-gray-500 text-sm">빠르게 확인 후 처리하겠습니다.<br />소중한 제보 감사합니다.</p>
+                <button
+                  onClick={() => setReportOpen(false)}
+                  className="mt-6 w-full py-3.5 bg-gray-900 text-white font-black rounded-2xl"
+                >
+                  닫기
+                </button>
+              </div>
+            ) : (
+              <div className="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                {/* 안내 */}
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  광고 정보에 이상이 있다고 느끼셨나요?<br />
+                  누구나 더 나은 정보를 볼 수 있도록 제보해 주세요.<br />
+                  제보하신 내용은 외부에 공개되지 않으며, 신속히 확인 후 처리합니다.
+                </p>
+
+                {/* 제보 대상 업소 */}
+                <div>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">제보 대상 업소</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 font-bold">
+                    {business.name}
+                  </div>
+                </div>
+
+                {/* 신고 사유 */}
+                <div>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">신고 사유 <span className="text-red-400">*</span></p>
+                  <div className="space-y-2">
+                    {[
+                      '주소 / 위치 오류',
+                      '전화번호 오류',
+                      '허위 / 과장 광고',
+                      '비허가 / 불법 업소 의심',
+                      '기타',
+                    ].map(reason => (
+                      <label key={reason} className="flex items-center gap-3 cursor-pointer group">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          reportReason === reason
+                            ? 'border-amber-500 bg-amber-500'
+                            : 'border-gray-300 group-hover:border-amber-300'
+                        }`}>
+                          {reportReason === reason && <div className="w-2 h-2 bg-white rounded-full" />}
+                        </div>
+                        <input type="radio" className="sr-only" name="report-reason" value={reason}
+                          checked={reportReason === reason}
+                          onChange={() => setReportReason(reason)} />
+                        <span className="text-sm text-gray-700">{reason}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 제보 내용 */}
+                <div>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">제보 내용 <span className="text-red-400">*</span></p>
+                  <textarea
+                    rows={4}
+                    placeholder="어떤 점이 잘못되었는지 알려주세요."
+                    value={reportContent}
+                    onChange={e => setReportContent(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 resize-none transition-colors"
+                  />
+                </div>
+
+                {/* 연락처 (선택) */}
+                <div>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">연락처 <span className="text-gray-300">(선택)</span></p>
+                  <input
+                    type="tel"
+                    placeholder="처리 결과 안내를 원하시면 연락처를 입력해주세요."
+                    value={reportContact}
+                    onChange={e => setReportContact(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors"
+                  />
+                </div>
+
+                {/* 버튼 */}
+                <div className="grid grid-cols-2 gap-3 pt-2 pb-2">
+                  <button
+                    onClick={() => setReportOpen(false)}
+                    className="py-3.5 bg-gray-100 text-gray-600 font-black rounded-2xl text-sm hover:bg-gray-200 transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleReportSubmit}
+                    disabled={reportSubmitting}
+                    className="py-3.5 bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {reportSubmitting
+                      ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> 전송 중...</>
+                      : '제보 내용 보내기'
+                    }
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── 하단 CTA ── */}
       {business && (
