@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  X, MapPin, Phone, Clock, ShieldCheck, Star, Check,
+  X, MapPin, Phone, Clock, ShieldCheck, Star, Check, Heart,
   ParkingCircle, Car, Navigation, Users, Building2,
   MessageSquare, ChevronLeft, ChevronRight, AlertCircle,
   Copy, ChevronDown, ChevronUp,
@@ -78,14 +78,104 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportDone, setReportDone] = useState(false);
 
+  // 찜하기
+  const [favorited, setFavorited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // 리뷰
+  interface ReviewItem {
+    id: string; rating: number; content: string; created_at: string; user_id: string;
+    bamgil_user_profiles: { nickname: string } | null;
+  }
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [reviewAvg, setReviewAvg] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [myRating, setMyRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [myContent, setMyContent] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [myReviewId, setMyReviewId] = useState<string | null>(null);
+
   useEffect(() => {
     const supabase = createClient();
     setLoading(true);
     setBusiness(null);
     setImgIdx(0);
+    setFavorited(false);
+    setReviews([]);
+    setReviewAvg(0);
+    setReviewCount(0);
+    setShowReviewForm(false);
+    setMyRating(0);
+    setMyContent('');
+    setMyReviewId(null);
+
     supabase.from('businesses').select('*, subscriptions(*)').eq('id', businessId).single()
       .then(({ data }) => { setBusiness(data); setLoading(false); });
+
+    // 로그인 유저 확인 + 찜 상태 + 리뷰
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id ?? null);
+      if (user) {
+        fetch(`/api/favorites?businessId=${businessId}`)
+          .then(r => r.json())
+          .then(d => setFavorited(!!d.favorited));
+      }
+    });
+
+    fetch(`/api/reviews?businessId=${businessId}`)
+      .then(r => r.json())
+      .then(d => {
+        setReviews(d.reviews ?? []);
+        setReviewAvg(d.average ?? 0);
+        setReviewCount(d.count ?? 0);
+        if (d.myReview) {
+          setMyRating(d.myReview.rating);
+          setMyContent(d.myReview.content ?? '');
+          setMyReviewId(d.myReview.id);
+        }
+      });
   }, [businessId]);
+
+  const handleToggleFavorite = async () => {
+    if (!currentUserId) {
+      alert('로그인 후 이용하실 수 있습니다.');
+      return;
+    }
+    if (favLoading) return;
+    setFavLoading(true);
+    const res = await fetch('/api/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId }),
+    });
+    const d = await res.json();
+    setFavorited(!!d.favorited);
+    setFavLoading(false);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!currentUserId) { alert('로그인 후 이용하실 수 있습니다.'); return; }
+    if (myRating === 0) { alert('별점을 선택해주세요.'); return; }
+    setReviewSubmitting(true);
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId, rating: myRating, content: myContent }),
+    });
+    if (res.ok) {
+      // 리뷰 목록 갱신
+      const d = await fetch(`/api/reviews?businessId=${businessId}`).then(r => r.json());
+      setReviews(d.reviews ?? []);
+      setReviewAvg(d.average ?? 0);
+      setReviewCount(d.count ?? 0);
+      if (d.myReview) setMyReviewId(d.myReview.id);
+      setShowReviewForm(false);
+    }
+    setReviewSubmitting(false);
+  };
 
   const logContact = (type: 'call' | 'chat') => {
     fetch('/api/contacts', {
@@ -148,12 +238,26 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* ── 헤더 ── */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200 shrink-0 bg-white">
-        <span className="text-sm font-bold text-gray-700 truncate max-w-[80%]">
+        <span className="text-sm font-bold text-gray-700 truncate max-w-[70%]">
           {business?.name ?? '업소 상세'}
         </span>
-        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* 찜하기 버튼 */}
+          <button
+            onClick={handleToggleFavorite}
+            disabled={favLoading}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            aria-label={favorited ? '찜 해제' : '찜하기'}
+          >
+            <Heart
+              size={18}
+              className={`transition-all ${favorited ? 'text-pink-500 fill-pink-500 scale-110' : 'text-gray-400'}`}
+            />
+          </button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
       {/* ── 스크롤 영역 ── */}
@@ -454,6 +558,119 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
                 )}
               </div>
             )}
+
+            {/* ── 리뷰 / 평점 섹션 ── */}
+            <div className="bg-white mt-2 border-b border-gray-100">
+              {/* 헤더 + 평균 */}
+              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star size={14} className="text-amber-400 fill-amber-400" />
+                  <span className="font-black text-gray-900 text-sm">리뷰</span>
+                  {reviewCount > 0 && (
+                    <span className="text-amber-500 font-black text-sm">{reviewAvg}</span>
+                  )}
+                  <span className="text-gray-400 text-xs">({reviewCount})</span>
+                </div>
+                {currentUserId ? (
+                  <button
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                    className="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100 transition-colors"
+                  >
+                    {myReviewId ? '내 리뷰 수정' : '리뷰 쓰기'}
+                  </button>
+                ) : (
+                  <span className="text-xs text-gray-400">로그인 후 작성 가능</span>
+                )}
+              </div>
+
+              {/* 리뷰 작성 폼 */}
+              {showReviewForm && (
+                <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+                  {/* 별점 선택 */}
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        onMouseEnter={() => setHoverRating(n)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        onClick={() => setMyRating(n)}
+                        className="p-0.5"
+                      >
+                        <Star
+                          size={28}
+                          className={`transition-colors ${
+                            n <= (hoverRating || myRating)
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-gray-200 fill-gray-200'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    {myRating > 0 && (
+                      <span className="text-sm font-black text-amber-500 ml-1">
+                        {['', '별로예요', '그저 그래요', '괜찮아요', '좋아요', '최고예요'][myRating]}
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={myContent}
+                    onChange={e => setMyContent(e.target.value)}
+                    placeholder="방문 후기를 남겨주세요. (선택)"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 resize-none transition-colors"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowReviewForm(false)}
+                      className="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold text-sm rounded-xl">
+                      취소
+                    </button>
+                    <button onClick={handleSubmitReview} disabled={reviewSubmitting || myRating === 0}
+                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:bg-gray-200 text-black font-black text-sm rounded-xl transition-colors">
+                      {reviewSubmitting ? '저장 중...' : '등록'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 리뷰 목록 */}
+              {reviews.length === 0 ? (
+                <div className="px-4 pb-5 text-center">
+                  <p className="text-gray-400 text-xs">아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {reviews.map(r => {
+                    const nick = r.bamgil_user_profiles?.nickname ?? '익명';
+                    const isMe = r.user_id === currentUserId;
+                    return (
+                      <div key={r.id} className={`px-4 py-3 ${isMe ? 'bg-amber-50/50' : ''}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] font-black text-gray-600">
+                              {nick[0].toUpperCase()}
+                            </div>
+                            <span className="text-xs font-bold text-gray-700">
+                              {nick}
+                              {isMe && <span className="text-amber-500 ml-1">(나)</span>}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} size={10}
+                                className={i < r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                            ))}
+                          </div>
+                        </div>
+                        {r.content && <p className="text-gray-600 text-xs leading-relaxed pl-8">{r.content}</p>}
+                        <p className="text-gray-300 text-[10px] pl-8 mt-0.5">
+                          {new Date(r.created_at).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <div className="h-4" />
           </>

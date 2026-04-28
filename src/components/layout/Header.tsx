@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Moon, Menu, X, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import AuthButton from '@/components/auth/AuthButton';
 
 const NAV_LINKS = [
   { href: '/', label: '홈' },
@@ -74,6 +75,7 @@ export default function Header() {
 
           {/* 우측 아이콘 */}
           <div className="flex items-center gap-2">
+            <AuthButton />
             <button
               onClick={() => setMenuOpen(true)}
               className="md:hidden p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
