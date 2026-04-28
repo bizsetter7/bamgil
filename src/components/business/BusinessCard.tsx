@@ -90,9 +90,14 @@ export default function BusinessCard({ business, compact = false, selected = fal
             ${selected ? 'text-amber-500' : 'text-white group-hover:text-amber-500'}`}>
             {business.name}
           </h3>
-          <p className="text-[11px] text-zinc-500 truncate">
+          <p className="text-[10px] text-zinc-400 font-medium truncate leading-tight">
             {locationText}
           </p>
+          {business.address && (
+            <p className="text-[10px] text-zinc-600 truncate leading-tight">
+              {business.address}
+            </p>
+          )}
         </div>
 
         {/* 아이콘 */}
