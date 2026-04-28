@@ -55,6 +55,15 @@ export default function BusinessCard({ business, compact = false, selected = fal
 
   /* ── 사이드패널 컴팩트 카드 ── */
   if (compact) {
+    // 지역 + 상세지역 + 카테고리 조합 ("경기 수원시 · 노래주점")
+    const regionLabel = business.region_code ? (REGION_LABELS[business.region_code] ?? business.region_code) : '';
+    const subRegion = business.address ? (business.address.trim().split(/\s+/)[1] ?? '') : '';
+    const locationText = subRegion
+      ? `${regionLabel} ${subRegion} · ${business.category}`
+      : regionLabel
+      ? `${regionLabel} · ${business.category}`
+      : business.category;
+
     const cardContent = (
       <div className={`flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors group cursor-pointer
         ${selected ? 'bg-zinc-800 border border-zinc-700' : 'hover:bg-zinc-900 border border-transparent'}`}
@@ -82,7 +91,7 @@ export default function BusinessCard({ business, compact = false, selected = fal
             {business.name}
           </h3>
           <p className="text-[11px] text-zinc-500 truncate">
-            {business.address ?? (business.region_code ? REGION_LABELS[business.region_code] ?? business.region_code : '')}
+            {locationText}
           </p>
         </div>
 
