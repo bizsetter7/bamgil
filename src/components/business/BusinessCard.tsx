@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Phone, MessageSquare } from 'lucide-react';
 import { getActivePlanFromList } from '@/lib/subscriptionPlan';
+import { haversineKm, formatDistance } from '@/lib/geo';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -45,9 +46,12 @@ interface BusinessCardProps {
   compact?: boolean;
   selected?: boolean;
   onSelect?: () => void;
+  // 거리/구동 배지용 (compact 카드에서만 사용)
+  userPos?: { lat: number; lng: number } | null;
+  geocoded?: { lat: number; lng: number; region2?: string; region3?: string } | null;
 }
 
-export default function BusinessCard({ business, compact = false, selected = false, onSelect }: BusinessCardProps) {
+export default function BusinessCard({ business, compact = false, selected = false, onSelect, userPos, geocoded }: BusinessCardProps) {
   const categoryColor = CATEGORY_COLORS[business.category] ?? 'text-gray-600 bg-gray-100';
   const categoryLabel = business.category;
   const categoryGradient = CATEGORY_GRADIENTS[business.category] ?? 'from-gray-300 via-gray-400 to-gray-500';
@@ -61,44 +65,52 @@ export default function BusinessCard({ business, compact = false, selected = fal
   /* ── 사이드패널 컴팩트 카드 (밤맵 스타일 가로 레이아웃) ── */
   if (compact) {
     const regionLabel = business.region_code ? (REGION_LABELS[business.region_code] ?? business.region_code) : '';
-    const subRegion = business.address ? (business.address.trim().split(/\s+/)[1] ?? '') : '';
+    // 1) 우선 geocoded.region2(시군구) 사용 — 예: "천안시 서북구"
+    // 2) 없으면 address에서 두 번째 토큰
+    const subRegion = geocoded?.region2 || (business.address ? (business.address.trim().split(/\s+/)[1] ?? '') : '');
     const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
+    // 구주소 동(법정동) — 예: "백석동"
+    const dongLabel = geocoded?.region3 ?? null;
+    // 사용자 위치 ↔ 업소 거리
+    const distanceLabel = userPos && geocoded
+      ? formatDistance(haversineKm(userPos, { lat: geocoded.lat, lng: geocoded.lng }))
+      : null;
 
     const cardContent = (
-      <div className={`flex gap-3 p-2.5 rounded-2xl transition-all group cursor-pointer mb-1.5
+      <div className={`flex gap-3 p-2.5 rounded-2xl transition-all group cursor-pointer mb-2
         ${selected
           ? 'bg-amber-50 border border-amber-300 shadow-sm'
           : 'bg-white hover:bg-gray-50 border border-gray-100 hover:border-gray-200'}`}
       >
-        {/* 썸네일 — 가로 110x90 */}
-        <div className="relative shrink-0 w-[110px] h-[90px] rounded-xl overflow-hidden bg-gray-100">
+        {/* 썸네일 — 가로 120x115 (세로폭 확대) */}
+        <div className="relative shrink-0 w-[120px] h-[115px] rounded-xl overflow-hidden bg-gray-100">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${categoryGradient} flex items-center justify-center relative overflow-hidden`}>
-              <span className="absolute text-white/15 font-black text-5xl select-none leading-none">{firstChar}</span>
-              <span className="relative text-white font-black text-2xl leading-none drop-shadow">{firstChar}</span>
+              <span className="absolute text-white/15 font-black text-6xl select-none leading-none">{firstChar}</span>
+              <span className="relative text-white font-black text-3xl leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
-          {/* 좌상단 배지 (인기 + 프리미엄 세로 적층) */}
+          {/* 좌상단 배지 (인기 + 프리미엄 세로 적층 — 두툼하게) */}
           {isPopular && (
-            <span className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+            <span className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
               🔥 인기
             </span>
           )}
           {isPremiumTier && (
-            <span className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+            <span className={`absolute ${isPopular ? 'top-[30px]' : 'top-1.5'} left-1.5 bg-amber-400 text-black text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm`}>
               ✓ 프리미엄
             </span>
           )}
         </div>
 
         {/* 텍스트 정보 */}
-        <div className="flex-1 min-w-0 py-0.5 space-y-1">
+        <div className="flex-1 min-w-0 py-0.5 flex flex-col gap-1">
           {/* 지역 + 카테고리 */}
           <div className="flex items-center gap-1 flex-wrap">
-            <span className="text-[10px] text-gray-400 font-medium">{locationLabel}</span>
+            <span className="text-[11px] text-gray-400 font-medium">{locationLabel}</span>
             <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 leading-none">
               {categoryLabel}
             </span>
@@ -108,14 +120,25 @@ export default function BusinessCard({ business, compact = false, selected = fal
             ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
             {business.name}
           </h3>
-          {/* 주소 */}
-          {business.address && (
-            <p className="text-[10px] text-gray-400 truncate leading-tight">{business.address}</p>
+          {/* 거리 + 구주소 동 배지 (한 줄) */}
+          {(distanceLabel || dongLabel) && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {distanceLabel && (
+                <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">
+                  {distanceLabel}
+                </span>
+              )}
+              {dongLabel && (
+                <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">
+                  {dongLabel}
+                </span>
+              )}
+            </div>
           )}
           {/* 연락 아이콘 */}
-          <div className="flex gap-2 text-gray-300 group-hover:text-gray-500 transition-colors pt-0.5">
-            {business.phone && <Phone size={11} />}
-            {business.open_chat_url && <MessageSquare size={11} />}
+          <div className="flex gap-2 text-gray-300 group-hover:text-gray-500 transition-colors mt-auto">
+            {business.phone && <Phone size={12} />}
+            {business.open_chat_url && <MessageSquare size={12} />}
           </div>
         </div>
       </div>

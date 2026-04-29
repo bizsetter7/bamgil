@@ -19,11 +19,21 @@ interface Business {
 // zoomTo(id): 해당 업소 위치로 맵 center + level 4
 export type ZoomToFn = (id: string) => void;
 
+// 업소별 geocoding 결과 (lat/lng + region 정보 — 거리·구동 배지용)
+export type GeocodedInfo = {
+  lat: number;
+  lng: number;
+  region2?: string;       // 시군구 (예: 천안시 서북구)
+  region3?: string;       // 법정동 (예: 백석동)
+  jibunAddress?: string;  // 지번주소(구주소)
+};
+
 interface KakaoMapProps {
   businesses: Business[];
   fullscreen?: boolean;
   onLoad?: (map: any, zoomTo: ZoomToFn) => void;
   onMarkerClick?: (id: string) => void;
+  onGeocoded?: (data: Map<string, GeocodedInfo>) => void;
 }
 
 declare global {
@@ -40,7 +50,7 @@ const CLUSTER_MIN_LEVEL = 6;
 const TRANSPARENT_GIF =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
-export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMarkerClick }: KakaoMapProps) {
+export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMarkerClick, onGeocoded }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -50,9 +60,11 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
   const routerRef = useRef(router);
   const onLoadRef = useRef(onLoad);
   const onMarkerClickRef = useRef(onMarkerClick);
+  const onGeocodedRef = useRef(onGeocoded);
   useEffect(() => { routerRef.current = router; }, [router]);
   useEffect(() => { onLoadRef.current = onLoad; }, [onLoad]);
   useEffect(() => { onMarkerClickRef.current = onMarkerClick; }, [onMarkerClick]);
+  useEffect(() => { onGeocodedRef.current = onGeocoded; }, [onGeocoded]);
 
   // businesses 핵심 식별자 — id+lat+lng+plan 변경 시에만 지도 재초기화
   const bizSignature = useMemo(
@@ -149,6 +161,7 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           const bounds = new window.kakao.maps.LatLngBounds();
           let hasValidPins = false;
           const allClusterMarkers: any[] = [];   // 배치 추가용
+          const geocodedMap = new Map<string, GeocodedInfo>();
 
           /* 모든 마커 수집 완료 후 한 번만 finalize */
           const finalizeMarkers = () => {
@@ -158,6 +171,8 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             }
             updateOverlays();
             if (hasValidPins) map.setBounds(bounds);
+            // geocoded 데이터 부모로 전달 (거리·구동 배지 계산용)
+            if (onGeocodedRef.current) onGeocodedRef.current(geocodedMap);
           };
 
           const addBusinessMarker = (biz: Business, position: any) => {
@@ -261,14 +276,22 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
               wrapper.addEventListener('mouseenter', () => {
                 popup.style.display = 'block';
                 el.style.transform = 'scale(1.06)';
+                try { overlay.setZIndex(9999); } catch { /* noop */ }
               });
               wrapper.addEventListener('mouseleave', () => {
                 popup.style.display = 'none';
                 el.style.transform = 'scale(1)';
+                try { overlay.setZIndex(zIdx); } catch { /* noop */ }
               });
             } else {
-              wrapper.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.06)'; });
-              wrapper.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
+              wrapper.addEventListener('mouseenter', () => {
+                el.style.transform = 'scale(1.06)';
+                try { overlay.setZIndex(9999); } catch { /* noop */ }
+              });
+              wrapper.addEventListener('mouseleave', () => {
+                el.style.transform = 'scale(1)';
+                try { overlay.setZIndex(zIdx); } catch { /* noop */ }
+              });
             }
 
             wrapper.appendChild(el);
@@ -300,18 +323,30 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           // geocoding 필요한 업소 수 추적
           const addressOnlyBizs = businesses.filter(b => !(b.lat && b.lng) && !!b.address);
           let pendingGeocode = addressOnlyBizs.length;
+          // pendingRegion은 fetchRegionForCoord 정의 직후 ++ 증가
+          let totalPendingRegion = 0;
+          const tryFinalize = () => {
+            if (pendingGeocode === 0 && totalPendingRegion === 0) finalizeMarkers();
+          };
 
           // 풀주소 실패 시 시/도+시군구 만으로 fallback (예: "충남 천안시 서북구")
           const tryGeocode = (biz: Business, addr: string, attempt: number) => {
             geocoder.addressSearch(addr, (result: any[], st: string) => {
               if (cancelled) return;
               if (st === window.kakao.maps.services.Status.OK && result[0]) {
-                addBusinessMarker(
-                  biz,
-                  new window.kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)),
-                );
+                const lat = parseFloat(result[0].y);
+                const lng = parseFloat(result[0].x);
+                addBusinessMarker(biz, new window.kakao.maps.LatLng(lat, lng));
+                // region 정보 저장 (구주소 region2/region3 + 지번주소)
+                const a = result[0].address || {};
+                geocodedMap.set(biz.id, {
+                  lat, lng,
+                  region2: a.region_2depth_name,        // "천안시 서북구"
+                  region3: a.region_3depth_name,        // "백석동"
+                  jibunAddress: a.address_name,
+                });
                 pendingGeocode--;
-                if (pendingGeocode === 0) finalizeMarkers();
+                tryFinalize();
               } else if (attempt === 0 && biz.address) {
                 // 1차 실패 → 시도+시군구만 잘라 재시도
                 const parts = biz.address.trim().split(/\s+/);
@@ -321,24 +356,45 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
                   return;
                 }
                 pendingGeocode--;
-                if (pendingGeocode === 0) finalizeMarkers();
+                tryFinalize();
               } else {
                 pendingGeocode--;
-                if (pendingGeocode === 0) finalizeMarkers();
+                tryFinalize();
               }
+            });
+          };
+
+          // lat/lng 보유 업소 → coord2RegionCode 로 region 정보 가져오기
+          const fetchRegionForCoord = (biz: Business, lat: number, lng: number) => {
+            totalPendingRegion++;
+            geocoder.coord2RegionCode(lng, lat, (result: any[], st: string) => {
+              if (!cancelled && st === window.kakao.maps.services.Status.OK && result?.length) {
+                // result에 'B'(법정동) 와 'H'(행정동) 두 종류가 옴 — B 우선
+                const b = result.find(r => r.region_type === 'B') || result[0];
+                geocodedMap.set(biz.id, {
+                  lat, lng,
+                  region2: b.region_2depth_name,
+                  region3: b.region_3depth_name,
+                });
+              } else if (!cancelled) {
+                geocodedMap.set(biz.id, { lat, lng });
+              }
+              totalPendingRegion--;
+              tryFinalize();
             });
           };
 
           businesses.forEach((biz) => {
             if (biz.lat && biz.lng) {
               addBusinessMarker(biz, new window.kakao.maps.LatLng(biz.lat, biz.lng));
+              fetchRegionForCoord(biz, biz.lat, biz.lng);
             } else if (biz.address) {
               tryGeocode(biz, stripDetailAddr(biz.address), 0);
             }
           });
 
-          // geocoding 없는 경우(전부 lat/lng) 즉시 finalize
-          if (pendingGeocode === 0) finalizeMarkers();
+          // 모든 업소가 lat/lng 없고 address도 없으면 즉시 finalize
+          tryFinalize();
 
           /* ─── zoomTo ─── */
           const zoomTo: ZoomToFn = (id: string) => {

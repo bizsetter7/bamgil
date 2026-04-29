@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
-import type { ZoomToFn } from '@/components/map/KakaoMap';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import type { ZoomToFn, GeocodedInfo } from '@/components/map/KakaoMap';
 import { Map as MapIcon, Grid, Home, Search, X, MapPin, Filter, ChevronDown, Navigation } from 'lucide-react';
 import { PROVINCES, DISTRICTS } from '@/lib/regions';
 import BusinessCard from '@/components/business/BusinessCard';
@@ -48,7 +48,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const [bannerIdx, setBannerIdx] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  
+
   // 오버레이 및 필터 상태
   const [regionOverlayOpen, setRegionOverlayOpen] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
@@ -56,6 +56,23 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const [nearMeActive, setNearMeActive] = useState(false);
   const mapInstanceRef = useRef<any>(null);
   const zoomFnRef = useRef<ZoomToFn | null>(null);
+
+  // 사용자 위치 (거리 표시용 — 자동 1회 시도, 권한 거절 시 거리 미표시)
+  const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => { /* 권한 거부 — 거리 미표시 */ },
+      { timeout: 5000, maximumAge: 60000 },
+    );
+  }, []);
+
+  // KakaoMap geocoding 결과 수신 (lat/lng + region 정보)
+  const [geocoded, setGeocoded] = useState<Map<string, GeocodedInfo>>(new Map());
+  const handleGeocoded = useCallback((data: Map<string, GeocodedInfo>) => {
+    setGeocoded(new Map(data));
+  }, []);
 
   const handleNearMe = () => {
     if (!navigator.geolocation) return;
@@ -524,6 +541,8 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                     compact
                     selected={selectedId === biz.id}
                     onSelect={() => handleSelect(biz.id)}
+                    userPos={userPos}
+                    geocoded={geocoded.get(biz.id)}
                   />
                 ))}
               </div>
@@ -646,11 +665,12 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
               : 'absolute inset-0 -z-10 opacity-0 pointer-events-none'}
           `}
         >
-          <KakaoMapClient 
-            businesses={mappable} 
-            fullscreen 
+          <KakaoMapClient
+            businesses={mappable}
+            fullscreen
             onLoad={(map, zoomTo) => { mapInstanceRef.current = map; zoomFnRef.current = zoomTo; }}
             onMarkerClick={(id) => handleSelect(id)}
+            onGeocoded={handleGeocoded}
           />
         </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ZoomToFn } from './KakaoMap';
+import type { ZoomToFn, GeocodedInfo } from './KakaoMap';
 
 // SSR 완전 비활성화 — window.kakao 접근 전 스크립트 로드 보장
 const KakaoMap = dynamic(() => import('./KakaoMap'), {
@@ -31,11 +31,13 @@ export default function KakaoMapClient({
   fullscreen = false,
   onLoad,
   onMarkerClick,
+  onGeocoded,
 }: {
   businesses: Business[];
   fullscreen?: boolean;
   onLoad?: (map: any, zoomTo: ZoomToFn) => void;
   onMarkerClick?: (id: string) => void;
+  onGeocoded?: (data: Map<string, GeocodedInfo>) => void;
 }) {
-  return <KakaoMap businesses={businesses} fullscreen={fullscreen} onLoad={onLoad} onMarkerClick={onMarkerClick} />;
+  return <KakaoMap businesses={businesses} fullscreen={fullscreen} onLoad={onLoad} onMarkerClick={onMarkerClick} onGeocoded={onGeocoded} />;
 }
