@@ -32,7 +32,9 @@ interface Business {
   open_chat_url: string | null;
   cover_image_url?: string | null;
   manager_name?: string | null;
+  manager_role?: string | null;
   business_hours?: string | null;
+  business_reg_number?: string | null;
   created_at?: string | null;
   subscriptions?: { plan: string; status: string }[] | null;
 }
@@ -650,9 +652,9 @@ export default function HomeClient({
                         <p className="text-gray-900 font-black text-base leading-snug line-clamp-2">
                           {biz.name}
                         </p>
-                        {/* 실장명 */}
+                        {/* 영업진명 + 직책 */}
                         {biz.manager_name && (
-                          <p className="text-gray-500 text-[12px]">{maskName(biz.manager_name)} 실장</p>
+                          <p className="text-gray-500 text-[12px]">{maskName(biz.manager_name)} {biz.manager_role || '실장'}</p>
                         )}
                         {/* 영업시간 해시태그 형식 */}
                         {hoursHashtag && (

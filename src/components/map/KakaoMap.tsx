@@ -13,6 +13,7 @@ interface Business {
   address?: string | null;
   category: string;
   manager_name?: string | null;
+  manager_role?: string | null;
   subscriptions?: { plan: string; status: string }[] | null;
 }
 
@@ -265,9 +266,10 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
               header.textContent = '👤 영업진';
               header.style.cssText = 'color:#f59e0b;font-size:10px;font-weight:900;margin-bottom:4px;';
               popup.appendChild(header);
+              const managerRole = biz.manager_role || '실장';
               managers.forEach((m) => {
                 const row = document.createElement('div');
-                row.textContent = `${maskName(m)} 실장`;
+                row.textContent = `${maskName(m)} ${managerRole}`;
                 row.style.cssText = 'color:#e4e4e7;';
                 popup.appendChild(row);
               });

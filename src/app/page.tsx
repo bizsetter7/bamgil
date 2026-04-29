@@ -20,7 +20,7 @@ export default async function HomePage({
   // 1) 활성 업소 전체 fetch (지역·카테고리 필터 없이)
   const { data: businesses } = await supabaseAdmin
     .from('businesses')
-    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, cover_image_url, manager_name, business_hours, created_at')
+    .select('id, name, category, region_code, address, lat, lng, phone, open_chat_url, cover_image_url, manager_name, manager_role, business_hours, business_reg_number, created_at')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(500);

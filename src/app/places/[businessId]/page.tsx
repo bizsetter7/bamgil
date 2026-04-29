@@ -160,7 +160,7 @@ export default async function BusinessDetailPage({
           <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">
             {business.name}
             {business.manager_name && (
-              <span className="text-gray-600 font-medium text-lg"> {maskName(business.manager_name)} 실장</span>
+              <span className="text-gray-600 font-medium text-lg"> {maskName(business.manager_name)} {business.manager_role || '실장'}</span>
             )}
           </h1>
 
