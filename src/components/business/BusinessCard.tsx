@@ -75,14 +75,14 @@ export default function BusinessCard({ business, compact = false, selected = fal
           : 'hover:bg-gray-50 border border-transparent hover:border-gray-200'}`}
       >
         {/* 썸네일 */}
-        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative">
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${categoryGradient} flex items-center justify-center relative overflow-hidden`}>
-              <span className="absolute text-white/20 font-black text-3xl select-none leading-none">{firstChar}</span>
-              <span className="relative text-white font-black text-base leading-none drop-shadow">{firstChar}</span>
+              <span className="absolute text-white/20 font-black text-4xl select-none leading-none">{firstChar}</span>
+              <span className="relative text-white font-black text-xl leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
           {/* 배지 오버레이 */}

@@ -250,6 +250,11 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             <div className="flex gap-3 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
               {newBusinesses.map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
+                const sub = biz.subscriptions?.[0];
+                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
+                const isDeluxe = activePlan === 'deluxe';
+                const isPopular = isPremiumTier || isDeluxe;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
@@ -260,6 +265,16 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                           <span className="text-gray-400 text-xs font-bold">사진없음</span>
+                        </div>
+                      )}
+                      {isPopular && (
+                        <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          🔥 인기
+                        </div>
+                      )}
+                      {isPremiumTier && (
+                        <div className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          ✓ 프리미엄
                         </div>
                       )}
                     </div>
@@ -287,7 +302,10 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
               {popularBusinesses.map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
                 const sub = biz.subscriptions?.[0];
-                const isTop = sub?.status === 'active' && (sub.plan === 'premium' || sub.plan === 'elite');
+                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
+                const isDeluxe = activePlan === 'deluxe';
+                const isPopular = isPremiumTier || isDeluxe;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
@@ -300,9 +318,14 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                           <span className="text-gray-400 text-xs font-bold">사진없음</span>
                         </div>
                       )}
-                      {isTop && (
-                        <div className="absolute top-1.5 right-1.5 bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">
-                          프리미엄
+                      {isPopular && (
+                        <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          🔥 인기
+                        </div>
+                      )}
+                      {isPremiumTier && (
+                        <div className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          ✓ 프리미엄
                         </div>
                       )}
                     </div>
@@ -330,16 +353,31 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             <div className="flex gap-3 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
               {newBusinesses.slice(0, 8).map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
+                const sub = biz.subscriptions?.[0];
+                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
+                const isDeluxe = activePlan === 'deluxe';
+                const isPopular = isPremiumTier || isDeluxe;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
-                    <div className="h-24 bg-gray-100 overflow-hidden">
+                    <div className="h-24 bg-gray-100 overflow-hidden relative">
                       {biz.cover_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                           <span className="text-gray-400 text-xs font-bold">사진없음</span>
+                        </div>
+                      )}
+                      {isPopular && (
+                        <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          🔥 인기
+                        </div>
+                      )}
+                      {isPremiumTier && (
+                        <div className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none shadow-sm">
+                          ✓ 프리미엄
                         </div>
                       )}
                     </div>
