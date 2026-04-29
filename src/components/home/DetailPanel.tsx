@@ -525,14 +525,17 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
             )}
 
             {/* ── 지도 + 길찾기 ── */}
-            {business.address && (
+            {(business.address || (business.lat && business.lng)) && (
               <div className="bg-white px-4 py-4 mt-2 border-b border-gray-100">
-                {/* 미니 카카오맵 */}
-                {business.lat && business.lng && (
-                  <div className="mb-3">
-                    <MiniMap lat={business.lat} lng={business.lng} name={business.name} />
-                  </div>
-                )}
+                {/* 미니 카카오맵 — lat/lng 없으면 주소 geocoding */}
+                <div className="mb-3">
+                  <MiniMap
+                    lat={business.lat}
+                    lng={business.lng}
+                    address={business.address}
+                    name={business.name}
+                  />
+                </div>
                 {/* 주소 + 복사 */}
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin size={13} className="text-gray-400 shrink-0" />

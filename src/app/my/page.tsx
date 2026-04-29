@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Heart, Star, Moon } from 'lucide-react';
+import { Heart, Star, Moon, Building2, ExternalLink } from 'lucide-react';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -44,26 +44,45 @@ export default async function MyPage() {
       <div className="max-w-2xl mx-auto space-y-8">
 
         {/* ── 프로필 헤더 ── */}
-        <header className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center gap-5">
-          <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-black text-2xl font-black shrink-0 shadow-sm">
-            {nickname[0].toUpperCase()}
+        <header className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-black text-2xl font-black shrink-0 shadow-sm">
+              {nickname[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-black text-gray-900">{nickname}</h1>
+              <p className="text-gray-400 text-sm">{user.email}</p>
+              {joinDate && (
+                <p className="text-gray-400 text-xs mt-1">
+                  <Moon size={10} className="inline mr-1" />
+                  {joinDate} 가입
+                </p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-2xl font-black text-gray-900">{favorites?.length ?? 0}</div>
+              <div className="text-xs text-gray-400 font-medium">찜한 업소</div>
+              <div className="text-2xl font-black text-gray-900 mt-1">{reviews?.length ?? 0}</div>
+              <div className="text-xs text-gray-400 font-medium">작성 리뷰</div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-black text-gray-900">{nickname}</h1>
-            <p className="text-gray-400 text-sm">{user.email}</p>
-            {joinDate && (
-              <p className="text-gray-400 text-xs mt-1">
-                <Moon size={10} className="inline mr-1" />
-                {joinDate} 가입
-              </p>
-            )}
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-2xl font-black text-gray-900">{favorites?.length ?? 0}</div>
-            <div className="text-xs text-gray-400 font-medium">찜한 업소</div>
-            <div className="text-2xl font-black text-gray-900 mt-1">{reviews?.length ?? 0}</div>
-            <div className="text-xs text-gray-400 font-medium">작성 리뷰</div>
-          </div>
+
+          {/* 업체 전환 배너 */}
+          <a
+            href="https://www.yasajang.kr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3 group"
+          >
+            <div className="w-9 h-9 bg-gray-100 group-hover:bg-amber-50 rounded-xl flex items-center justify-center shrink-0 transition-colors">
+              <Building2 size={16} className="text-gray-500 group-hover:text-amber-600 transition-colors" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-gray-800">업체 사장님이신가요?</p>
+              <p className="text-xs text-gray-400 mt-0.5">야사장에서 무료로 업소 등록 · 구독 관리</p>
+            </div>
+            <ExternalLink size={14} className="text-gray-300 group-hover:text-amber-500 shrink-0 transition-colors" />
+          </a>
         </header>
 
         {/* ── 찜한 업소 ── */}

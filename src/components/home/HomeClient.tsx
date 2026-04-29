@@ -114,12 +114,22 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
     }).slice(0, 12), [businesses]);
 
   const handleSelect = (id: string) => {
-    setSelectedId((prev) => (prev === id ? null : id));
-    // 선택된 업소가 있으면 지도 해당 위치로 줌인
+    const newId = selectedId === id ? null : id;
+
+    // 지도 줌인 (항상 시도)
     const biz = businesses.find(b => b.id === id);
-    if (biz?.lat && biz?.lng && mapInstanceRef.current) {
-      mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(biz.lat, biz.lng));
-      mapInstanceRef.current.setLevel(4);
+    if (biz?.lat && biz?.lng && mapInstanceRef.current && newId) {
+      try {
+        mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(biz.lat, biz.lng));
+        mapInstanceRef.current.setLevel(4);
+      } catch { /* kakao 미로드 시 무시 */ }
+    }
+
+    // 모바일 지도탭: 줌 보여준 후 300ms 뒤 디테일 패널 오픈
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && mobileTab === 'map' && newId) {
+      setTimeout(() => setSelectedId(newId), 300);
+    } else {
+      setSelectedId(newId);
     }
   };
 
@@ -146,7 +156,11 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           </span>
         </button>
         <button
-          onClick={() => setMobileTab('map')}
+          onClick={() => {
+            setMobileTab('map');
+            // display:none 없이 opacity로 관리하지만, 혹시 모를 렌더 이슈 대비 relayout
+            setTimeout(() => mapInstanceRef.current?.relayout?.(), 100);
+          }}
           className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-sm font-bold transition-colors
             ${mobileTab === 'map' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-gray-400'}`}
         >
@@ -568,12 +582,17 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           </div>
         </aside>
 
-        {/* ─── 지도 영역 (PC: flex-1 / 모바일: 전체) ─── */}
+        {/* ─── 지도 영역 (PC: flex-1 / 모바일: absolute로 항상 렌더 — opacity 토글) ─── */}
+        {/* NOTE: display:none이면 Kakao Maps가 0x0 크기로 초기화돼서 줌 작동 안 함 */}
+        {/* absolute inset-0으로 항상 풀사이즈 유지하면서 opacity로 show/hide */}
         <div
           className={`
-            flex-1 relative min-w-0 h-full
-            ${mobileTab === 'map' ? 'block' : 'hidden'} md:block
-            transition-all duration-300
+            absolute inset-0 transition-opacity duration-200
+            ${mobileTab === 'map'
+              ? 'opacity-100 pointer-events-auto z-10'
+              : 'opacity-0 pointer-events-none -z-10'}
+            md:static md:flex-1 md:min-w-0 md:h-full
+            md:opacity-100 md:pointer-events-auto md:z-auto
           `}
         >
           <KakaoMapClient 
