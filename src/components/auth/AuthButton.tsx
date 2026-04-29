@@ -2,52 +2,58 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Heart, LogOut, ChevronDown, User } from 'lucide-react';
+import { Heart, LogOut, ChevronDown, User, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-interface Profile {
-  nickname: string;
+interface MeData {
+  user: { id: string; email: string } | null;
+  profile: { nickname: string } | null;
 }
 
 export default function AuthButton() {
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [me, setMe] = useState<MeData>({ user: null, profile: null });
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const fetchMe = async () => {
+    try {
+      const res = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (res.ok) {
+        const data: MeData = await res.json();
+        setMe(data);
+        // 로그인됐는데 프로필 없으면 → 온보딩
+        if (data.user && !data.profile) {
+          router.push('/onboarding');
+        }
+      }
+    } catch {
+      // 무시 — 미로그인으로 처리
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 3초 타임아웃
+    const timer = setTimeout(() => setLoading(false), 3000);
+    fetchMe();
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 로그인 후 Supabase auth state 변화 감지 (페이지 재방문 시)
   useEffect(() => {
     const supabase = createClient();
-
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        const { data } = await supabase
-          .from('bamgil_user_profiles')
-          .select('nickname')
-          .eq('id', user.id)
-          .maybeSingle();
-        setProfile(data);
-      }
-      setLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        const { data } = await supabase
-          .from('bamgil_user_profiles')
-          .select('nickname')
-          .eq('id', u.id)
-          .maybeSingle();
-        setProfile(data);
-      } else {
-        setProfile(null);
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        fetchMe();
       }
     });
-
     return () => listener.subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = async () => {
@@ -63,28 +69,35 @@ export default function AuthButton() {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    setMe({ user: null, profile: null });
     setMenuOpen(false);
     window.location.href = '/';
   };
 
   if (loading) {
-    return <div className="w-20 h-8 bg-gray-100 rounded-lg animate-pulse" />;
-  }
-
-  if (!user) {
     return (
       <button
         onClick={handleLogin}
-        className="px-3 py-1.5 text-sm font-bold text-gray-700 hover:text-gray-900 border border-gray-300 hover:border-gray-500 rounded-lg transition-colors"
+        className="px-3 py-1.5 text-sm font-bold text-gray-400 border border-gray-200 rounded-lg"
       >
         로그인
       </button>
     );
   }
 
-  const displayName = profile?.nickname ?? '손님';
+  if (!me.user) {
+    return (
+      <button
+        onClick={handleLogin}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-gray-700 hover:text-gray-900 border border-gray-300 hover:border-gray-500 rounded-lg transition-colors"
+      >
+        <LogIn size={14} />
+        로그인
+      </button>
+    );
+  }
+
+  const displayName = me.profile?.nickname ?? '손님';
   const initial = displayName[0].toUpperCase();
 
   return (
@@ -106,11 +119,13 @@ export default function AuthButton() {
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+            {/* 유저 정보 */}
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-xs font-black text-gray-900 truncate">{displayName}</p>
-              <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+              <p className="text-[10px] text-gray-400 truncate">{me.user.email}</p>
             </div>
+            {/* 내 찜 */}
             <Link
               href="/my"
               onClick={() => setMenuOpen(false)}
@@ -119,9 +134,10 @@ export default function AuthButton() {
               <Heart size={14} className="text-pink-500" />
               내 찜 목록
             </Link>
+            {/* 로그아웃 — 항상 보이게 */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors border-t border-gray-100"
+              className="w-full flex items-center gap-2 px-4 py-3.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
             >
               <LogOut size={14} />
               로그아웃

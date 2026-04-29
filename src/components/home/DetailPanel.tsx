@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import {
   X, MapPin, Phone, Clock, ShieldCheck, Star, Check, Heart,
   ParkingCircle, Car, Navigation, Users, Building2,
@@ -99,7 +98,6 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
   const [myReviewId, setMyReviewId] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
     setLoading(true);
     setBusiness(null);
     setImgIdx(0);
@@ -112,21 +110,30 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
     setMyContent('');
     setMyReviewId(null);
 
-    supabase.from('businesses').select('*, subscriptions(*)').eq('id', businessId).single()
-      .then(({ data }) => { setBusiness(data); setLoading(false); });
+    // ① 업소 정보 — 서버 API 경유 (Supabase quota 우회)
+    fetch(`/api/businesses/detail?id=${businessId}`)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(d => { setBusiness(d.business ?? null); setLoading(false); })
+      .catch(() => { setBusiness(null); setLoading(false); });
 
-    // 로그인 유저 확인 + 찜 상태 + 리뷰
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id ?? null);
-      if (user) {
-        fetch(`/api/favorites?businessId=${businessId}`)
-          .then(r => r.json())
-          .then(d => setFavorited(!!d.favorited));
-      }
-    });
+    // ② 현재 유저 — 서버 API 경유
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const userId = d?.user?.id ?? null;
+        setCurrentUserId(userId);
+        if (userId) {
+          fetch(`/api/favorites?businessId=${businessId}`)
+            .then(r => r.ok ? r.json() : { favorited: false })
+            .then(d => setFavorited(!!d.favorited))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
 
+    // ③ 리뷰
     fetch(`/api/reviews?businessId=${businessId}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : { reviews: [], average: 0, count: 0 })
       .then(d => {
         setReviews(d.reviews ?? []);
         setReviewAvg(d.average ?? 0);
@@ -136,7 +143,8 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
           setMyContent(d.myReview.content ?? '');
           setMyReviewId(d.myReview.id);
         }
-      });
+      })
+      .catch(() => {});
   }, [businessId]);
 
   const handleToggleFavorite = async () => {

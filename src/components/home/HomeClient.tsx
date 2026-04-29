@@ -115,6 +115,12 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
   const handleSelect = (id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
+    // 선택된 업소가 있으면 지도 해당 위치로 줌인
+    const biz = businesses.find(b => b.id === id);
+    if (biz?.lat && biz?.lng && mapInstanceRef.current) {
+      mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(biz.lat, biz.lng));
+      mapInstanceRef.current.setLevel(4);
+    }
   };
 
   return (
