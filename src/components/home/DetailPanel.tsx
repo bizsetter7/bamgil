@@ -65,7 +65,24 @@ interface Business {
   subscriptions: { status: string; plan: string }[] | null;
 }
 
-export default function DetailPanel({ businessId, onClose }: { businessId: string; onClose: () => void }) {
+interface GroupMember {
+  id: string;
+  manager_name?: string | null;
+  manager_role?: string | null;
+  subscriptions?: { plan: string; status: string }[] | null;
+}
+
+export default function DetailPanel({
+  businessId,
+  onClose,
+  groupMembers = [],
+  onSelectMember,
+}: {
+  businessId: string;
+  onClose: () => void;
+  groupMembers?: GroupMember[];
+  onSelectMember?: (id: string) => void;
+}) {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
@@ -355,6 +372,39 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
                   <span className="text-gray-500 font-medium text-base"> {maskName(business.manager_name)} {business.manager_role || '실장'}</span>
                 )}
               </h2>
+
+              {/* 영업진 리스트 (그룹 — 같은 사업자 다중 영업진) */}
+              {groupMembers.length > 1 && (
+                <div className="mb-3 pb-3 border-b border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                    👥 영업진 {groupMembers.length}명 — 클릭하여 전환
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {groupMembers.map((m) => {
+                      const memberPlan = getActivePlanFromList(m.subscriptions);
+                      const isMemberPremium = memberPlan === 'premium' || memberPlan === 'elite';
+                      const isMemberDeluxe = memberPlan === 'deluxe';
+                      const isCurrent = m.id === businessId;
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => !isCurrent && onSelectMember?.(m.id)}
+                          disabled={isCurrent}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all
+                            ${isCurrent
+                              ? 'bg-amber-500 text-black cursor-default ring-2 ring-amber-300'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'}`}
+                        >
+                          {isMemberPremium && <span className="text-amber-600">★</span>}
+                          {isMemberDeluxe && <span className="text-blue-600">◆</span>}
+                          <span>{m.manager_name ? maskName(m.manager_name) : '담당자'}</span>
+                          <span className="text-[10px] opacity-70">{m.manager_role || '실장'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* 주소 */}
               <div className="flex items-start gap-2 text-sm text-gray-700 mb-2">

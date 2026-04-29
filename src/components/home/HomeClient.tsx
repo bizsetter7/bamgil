@@ -10,6 +10,7 @@ import DetailPanel from './DetailPanel';
 import { maskName } from '@/lib/maskName';
 import { getTodayHours, getTodayHoursHashtag } from '@/lib/businessHours';
 import { getActivePlanFromList } from '@/lib/subscriptionPlan';
+import { haversineKm, formatDistance } from '@/lib/geo';
 import Link from 'next/link';
 
 const REGION_LABELS: Record<string, string> = {
@@ -135,12 +136,55 @@ export default function HomeClient({
     return result;
   }, [businesses, region, category, searchQuery, selectedSubRegions]);
 
-  // lat/lng 있거나, address만 있어도 KakaoMap geocoder가 핀 추가 가능
-  // useMemo 필수 — 매 렌더 새 배열 시 KakaoMap useEffect 재실행되어 지도 깜빡임
+  // ─── Phase B: 사업자등록번호 기준 그룹화 ───
+  // 같은 사업자에 여러 영업진 등록 시 1개 카드/마커로 표시 (캡처5 스타일)
+  // 그룹 내 plan 우선순위 최상위가 primary, 색상·배지·마커 모두 primary 기준
+  const PLAN_RANK: Record<string, number> = {
+    elite: 100, premium: 90, deluxe: 80, special: 70, standard: 60, basic: 50,
+  };
+  const planRank = (b: Business): number => {
+    const plan = getActivePlanFromList(b.subscriptions);
+    return plan ? (PLAN_RANK[plan] ?? 0) : 0;
+  };
+
+  const filteredGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const result: Array<{ groupKey: string; primary: Business; members: Business[] }> = [];
+    filtered.forEach((b) => {
+      const key = (b.business_reg_number && b.business_reg_number.trim()) || b.id;
+      if (seen.has(key)) return;
+      seen.add(key);
+      // 같은 사업자번호 가진 모든 row (필터 무관 — 전체 businesses 기준으로 영업진 모음)
+      const members = (b.business_reg_number && b.business_reg_number.trim())
+        ? businesses.filter(m => (m.business_reg_number ?? '').trim() === key)
+        : [b];
+      // primary: plan 우선순위 → 같으면 created_at 빠른 순
+      const primary = members.slice().sort((a, b) => {
+        const diff = planRank(b) - planRank(a);
+        if (diff !== 0) return diff;
+        return (a.created_at ?? '').localeCompare(b.created_at ?? '');
+      })[0];
+      result.push({ groupKey: key, primary, members });
+    });
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, businesses]);
+
+  // KakaoMap에 전달할 마커 — 그룹당 primary 1개만
   const mappable = useMemo(
-    () => filtered.filter((b) => (b.lat && b.lng) || !!b.address),
-    [filtered],
+    () => filteredGroups
+      .map(g => g.primary)
+      .filter((b) => (b.lat && b.lng) || !!b.address),
+    [filteredGroups],
   );
+
+  // 선택된 영업진의 그룹 members (DetailPanel 영업진 리스트용)
+  const selectedGroupMembers = useMemo(() => {
+    if (!selectedId) return [];
+    const group = filteredGroups.find(g => g.members.some(m => m.id === selectedId))
+      ?? filteredGroups.find(g => g.primary.id === selectedId);
+    return group?.members ?? [];
+  }, [selectedId, filteredGroups]);
 
   // ── 홈 탭 섹션용 computed ──
   const bannerBusinesses = useMemo(() =>
@@ -538,17 +582,17 @@ export default function HomeClient({
             </div>
           </div>
 
-          {/* ── PC 업소 리스트 ── */}
+          {/* ── PC 업소 리스트 (그룹화 기준) ── */}
           <div className="hidden md:flex flex-col flex-1 overflow-hidden">
             <div className="px-3 pt-2.5 pb-1 flex items-center justify-between shrink-0">
               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                {filtered.length}개 업소
+                {filteredGroups.length}개 업소
               </span>
               {searchQuery && (
                 <span className="text-[9px] text-amber-500 font-bold">&ldquo;{searchQuery}&rdquo;</span>
               )}
             </div>
-            {filtered.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="py-12 text-center px-4">
                 <p className="text-gray-400 text-xs font-medium">검색 결과가 없습니다.</p>
                 {searchQuery && (
@@ -559,33 +603,34 @@ export default function HomeClient({
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3">
-                {filtered.map((biz) => (
+                {filteredGroups.map((group) => (
                   <BusinessCard
-                    key={biz.id}
-                    business={biz}
+                    key={group.groupKey}
+                    business={group.primary}
                     compact
-                    selected={selectedId === biz.id}
-                    onSelect={() => handleSelect(biz.id)}
+                    selected={group.members.some(m => m.id === selectedId)}
+                    onSelect={() => handleSelect(group.primary.id)}
                     userPos={userPos}
-                    geocoded={geocoded.get(biz.id)}
+                    geocoded={geocoded.get(group.primary.id)}
+                    memberCount={group.members.length}
                   />
                 ))}
               </div>
             )}
           </div>
 
-          {/* ── 모바일 밤맵 스타일 카드 리스트 ── */}
+          {/* ── 모바일 밤맵 스타일 카드 리스트 (그룹화 기준) ── */}
           <div className="md:hidden flex-1 overflow-y-auto">
             {/* 스티키 카운트 바 */}
             <div className="sticky top-0 z-10 px-4 py-2.5 bg-white/95 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between">
               <span className="text-xs font-bold text-gray-500">
-                {filtered.length}개 업소
+                {filteredGroups.length}개 업소
                 {searchQuery && <span className="text-amber-500 ml-1.5">&ldquo;{searchQuery}&rdquo;</span>}
               </span>
               <span className="text-[10px] text-gray-400 font-bold">등록순</span>
             </div>
 
-            {filtered.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="py-16 text-center px-4">
                 <p className="text-gray-400 text-sm font-medium">검색 결과가 없습니다.</p>
                 {searchQuery && (
@@ -596,22 +641,30 @@ export default function HomeClient({
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {filtered.map((biz) => {
+                {filteredGroups.map((group) => {
+                  const biz = group.primary;
+                  const memberCount = group.members.length;
                   const activePlan = getActivePlanFromList(biz.subscriptions);
                   const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                   const isDeluxe = activePlan === 'deluxe';
                   const isPopular = isPremiumTier || isDeluxe;
                   const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
-                  // address에서 두번째 단어(시/군/구) 추출 → "경기 수원시" 형태
-                  const subRegion = biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null;
+                  // 우선순위: geocoded.region2(시군구) → address 두번째 토큰
+                  const geo = geocoded.get(biz.id);
+                  const subRegion = geo?.region2 || (biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null);
                   const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
                   const addressLine = biz.address ?? regionLabel;
                   const hoursHashtag = getTodayHoursHashtag(biz.business_hours);
                   const todayHours = getTodayHours(biz.business_hours);
+                  // 거리 + 구주소 동 배지 (PC 카드와 동일 패턴)
+                  const dongLabel = geo?.region3 ?? null;
+                  const distanceLabel = userPos && geo
+                    ? formatDistance(haversineKm(userPos, { lat: geo.lat, lng: geo.lng }))
+                    : null;
 
                   return (
                     <a
-                      key={biz.id}
+                      key={group.groupKey}
                       href={`/places/${biz.id}`}
                       onClick={(e) => { e.preventDefault(); handleSelect(biz.id); }}
                       className="flex gap-3.5 px-4 py-4 active:bg-gray-50 transition-colors cursor-pointer"
@@ -652,19 +705,39 @@ export default function HomeClient({
                         <p className="text-gray-900 font-black text-base leading-snug line-clamp-2">
                           {biz.name}
                         </p>
-                        {/* 영업진명 + 직책 */}
+                        {/* 영업진명 + 직책 + 영업진 수 (그룹) */}
                         {biz.manager_name && (
-                          <p className="text-gray-500 text-[12px]">{maskName(biz.manager_name)} {biz.manager_role || '실장'}</p>
+                          <p className="text-gray-500 text-[12px]">
+                            {maskName(biz.manager_name)} {biz.manager_role || '실장'}
+                            {memberCount > 1 && (
+                              <span className="ml-1.5 text-amber-600 font-black text-[10px]">외 {memberCount - 1}명</span>
+                            )}
+                          </p>
                         )}
                         {/* 영업시간 해시태그 형식 */}
                         {hoursHashtag && (
                           <p className="text-amber-600 text-[11px] font-bold truncate">{hoursHashtag}</p>
                         )}
-                        {/* 주소 (시간 없을 때만) */}
-                        {!hoursHashtag && !todayHours && (
+                        {/* 거리 + 구주소 동 배지 */}
+                        {(distanceLabel || dongLabel) && (
+                          <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                            {distanceLabel && (
+                              <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">
+                                {distanceLabel}
+                              </span>
+                            )}
+                            {dongLabel && (
+                              <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">
+                                {dongLabel}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {/* 주소 (거리·동·시간 모두 없을 때만) */}
+                        {!hoursHashtag && !todayHours && !distanceLabel && !dongLabel && (
                           <p className="text-gray-400 text-[11px] truncate">{addressLine}</p>
                         )}
-                        {/* 시간 텍스트 (해시태그 없고 일반 텍스트 있을 때) */}
+                        {/* 시간 텍스트 */}
                         {!hoursHashtag && todayHours && (
                           <p className="text-gray-400 text-[11px] truncate">{todayHours}</p>
                         )}
@@ -713,6 +786,8 @@ export default function HomeClient({
             <DetailPanel
               businessId={selectedId}
               onClose={() => setSelectedId(null)}
+              groupMembers={selectedGroupMembers}
+              onSelectMember={(id) => setSelectedId(id)}
             />
           )}
         </div>
@@ -729,6 +804,8 @@ export default function HomeClient({
             <DetailPanel
               businessId={selectedId}
               onClose={() => setSelectedId(null)}
+              groupMembers={selectedGroupMembers}
+              onSelectMember={(id) => setSelectedId(id)}
             />
           )}
         </div>
@@ -737,7 +814,8 @@ export default function HomeClient({
       {/* ── 지역 선택 풀스크린 오버레이 (좌우 분할 + 카운트) ── */}
       {regionOverlayOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setRegionOverlayOpen(false)}>
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+          {/* 모달 — h-[80vh] 고정 (max-h가 아닌 h로 강제하여 자식 height 계산 명확) */}
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl w-full max-w-3xl h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
             {/* 헤더 */}
             <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200 shrink-0">
               <div className="flex items-center gap-3">
@@ -763,10 +841,10 @@ export default function HomeClient({
               </button>
             </div>
 
-            {/* 좌우 분할 본문 — 모달 max-h-[80vh] 안에서 좌·우 패널 각자 스크롤 */}
-            <div className="flex-1 flex min-h-0 max-h-[calc(80vh-65px)]">
-              {/* ── 좌측: 시도 리스트 (스크롤) ── */}
-              <div className="w-28 sm:w-36 shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+            {/* 좌우 분할 본문 — overflow-hidden + min-h-0으로 자식 스크롤 보장 */}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+              {/* ── 좌측: 시도 리스트 (h-full + overflow-y-auto로 강제 스크롤) ── */}
+              <div className="w-28 sm:w-36 shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50 h-full">
                 {PROVINCES.map(p => {
                   const isActive = overlayActiveProvince === p.key;
                   const count = provinceCounts[p.key] ?? 0;
@@ -788,8 +866,8 @@ export default function HomeClient({
                 })}
               </div>
 
-              {/* ── 우측: 구/군 리스트 (스크롤) ── */}
-              <div className="flex-1 overflow-y-auto p-4">
+              {/* ── 우측: 구/군 리스트 (h-full + overflow-y-auto) ── */}
+              <div className="flex-1 overflow-y-auto p-4 h-full">
                 {overlayActiveProvince && (
                   <>
                     {/* 시도 전체 선택 — 클릭 시 즉시 반영 + 닫힘 */}

@@ -49,9 +49,11 @@ interface BusinessCardProps {
   // 거리/구동 배지용 (compact 카드에서만 사용)
   userPos?: { lat: number; lng: number } | null;
   geocoded?: { lat: number; lng: number; region2?: string; region3?: string } | null;
+  // 그룹 영업진 수 (같은 사업자에 여러 영업진 등록 시 — Phase B)
+  memberCount?: number;
 }
 
-export default function BusinessCard({ business, compact = false, selected = false, onSelect, userPos, geocoded }: BusinessCardProps) {
+export default function BusinessCard({ business, compact = false, selected = false, onSelect, userPos, geocoded, memberCount = 1 }: BusinessCardProps) {
   const categoryColor = CATEGORY_COLORS[business.category] ?? 'text-gray-600 bg-gray-100';
   const categoryLabel = business.category;
   const categoryGradient = CATEGORY_GRADIENTS[business.category] ?? 'from-gray-300 via-gray-400 to-gray-500';
@@ -119,10 +121,13 @@ export default function BusinessCard({ business, compact = false, selected = fal
               {categoryLabel}
             </span>
           </div>
-          {/* 업소명 */}
+          {/* 업소명 + 영업진 수 */}
           <h3 className={`text-sm font-black truncate transition-colors leading-tight
             ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
             {business.name}
+            {memberCount > 1 && (
+              <span className="ml-1 text-amber-600 font-black text-[10px]">+{memberCount - 1}</span>
+            )}
           </h3>
           {/* 거리 + 구주소 동 배지 (한 줄) */}
           {(distanceLabel || dongLabel) && (
