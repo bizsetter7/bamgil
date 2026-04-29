@@ -260,11 +260,19 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           /* ─── geocoder ─── */
           const geocoder = new window.kakao.maps.services.Geocoder();
 
+          // 층/호/동 등 세부 위치 정보 제거 — 카카오 geocoder가 인식 못함
+          const stripDetailAddr = (addr: string) =>
+            addr
+              .replace(/\s+\d+층.*$/, '')
+              .replace(/\s+\d+호.*$/, '')
+              .replace(/\s+[가-힣]*\d*동\s+\d+호.*$/, '')
+              .trim();
+
           businesses.forEach((biz) => {
             if (biz.lat && biz.lng) {
               addBusinessMarker(biz, new window.kakao.maps.LatLng(biz.lat, biz.lng));
             } else if (biz.address) {
-              geocoder.addressSearch(biz.address, (result: any[], st: string) => {
+              geocoder.addressSearch(stripDetailAddr(biz.address), (result: any[], st: string) => {
                 if (cancelled) return;
                 if (st === window.kakao.maps.services.Status.OK && result[0]) {
                   addBusinessMarker(
