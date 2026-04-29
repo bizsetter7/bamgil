@@ -24,61 +24,96 @@ interface KakaoMapProps {
 }
 
 declare global {
-  interface Window {
-    kakao: any;
-  }
+  interface Window { kakao: any; }
 }
 
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
 
+// 클러스터 표시 기준 레벨 (이 레벨 이상이면 클러스터, 미만이면 라벨)
+const CLUSTER_MIN_LEVEL = 6;
+
+// 투명 1x1 GIF (클러스터용 invisible Marker 이미지)
+const TRANSPARENT_GIF =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMarkerClick }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  // 업소 ID → 카카오 LatLng 위치 캐시 (handleSelect에서 재geocoding 없이 zoom 사용)
   const positionsCache = useRef<Map<string, any>>(new Map());
 
   useEffect(() => {
     if (!mapRef.current) return;
     let cancelled = false;
+    // 정리용
+    let clustererRef: any = null;
+    const ownedOverlays: any[] = [];
 
-    // 지도 초기화 (center = 서울 기본값, 이후 geolocation으로 이동)
     const initMap = (userLat: number, userLng: number) => {
       if (cancelled || !mapRef.current || !window.kakao) return;
-
       try {
         window.kakao.maps.load(() => {
           if (cancelled || !mapRef.current) return;
 
+          /* ─── 지도 생성 ─── */
           const center = new window.kakao.maps.LatLng(userLat, userLng);
-          const map = new window.kakao.maps.Map(mapRef.current, {
-            center,
-            level: 5,
+          const map = new window.kakao.maps.Map(mapRef.current, { center, level: 5 });
+
+          /* ─── 클러스터러 생성 (비어있는 채로 시작) ─── */
+          const clusterer = new window.kakao.maps.MarkerClusterer({
+            map,
+            markers: [],
+            averageCenter: true,
+            minLevel: CLUSTER_MIN_LEVEL,
+            disableClickZoom: false,
+            styles: [
+              // count 1~9
+              {
+                width: '40px', height: '40px',
+                background: 'rgba(37,99,235,0.90)',
+                borderRadius: '50%',
+                color: '#fff', textAlign: 'center',
+                lineHeight: '40px', fontWeight: '800', fontSize: '14px',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.45)',
+              },
+              // count 10~99
+              {
+                width: '48px', height: '48px',
+                background: 'rgba(29,78,216,0.92)',
+                borderRadius: '50%',
+                color: '#fff', textAlign: 'center',
+                lineHeight: '48px', fontWeight: '800', fontSize: '16px',
+                boxShadow: '0 2px 10px rgba(29,78,216,0.45)',
+              },
+              // count 100+
+              {
+                width: '56px', height: '56px',
+                background: 'rgba(30,64,175,0.94)',
+                borderRadius: '50%',
+                color: '#fff', textAlign: 'center',
+                lineHeight: '56px', fontWeight: '800', fontSize: '18px',
+                boxShadow: '0 3px 12px rgba(30,64,175,0.5)',
+              },
+            ],
           });
+          clustererRef = clusterer;
 
-          setStatus('ready');
-
-          // zoomTo: 맵을 해당 업소 위치로 center + level 4
-          const zoomTo: ZoomToFn = (id: string) => {
-            const pos = positionsCache.current.get(id);
-            if (!pos) return;
-            try {
-              map.relayout();  // 레이아웃 변화 후 치수 재계산
-              map.setCenter(pos);
-              map.setLevel(4);
-            } catch { /* 무시 */ }
+          /* ─── overlay 가시성 업데이트 ─── */
+          const updateOverlays = () => {
+            const level = map.getLevel();
+            const show = level < CLUSTER_MIN_LEVEL;
+            ownedOverlays.forEach((o) => o.setMap(show ? map : null));
           };
+          window.kakao.maps.event.addListener(map, 'zoom_changed', updateOverlays);
 
-          if (onLoad) onLoad(map, zoomTo);
-
-          // 현재 위치 마커
+          /* ─── 현재 위치 마커 ─── */
           if (userLat !== DEFAULT_LAT || userLng !== DEFAULT_LNG) {
             new window.kakao.maps.CustomOverlay({
               map,
               position: new window.kakao.maps.LatLng(userLat, userLng),
               content: `<div style="
-                width:16px;height:16px;
+                width:14px;height:14px;
                 background:#f59e0b;border:3px solid #fff;
                 border-radius:50%;box-shadow:0 0 0 4px rgba(245,158,11,0.3);
               "></div>`,
@@ -86,95 +121,133 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             });
           }
 
-          // 업소 마커 (구독 티어별 CustomOverlay)
+          /* ─── 투명 마커 이미지 (클러스터용) ─── */
+          const invisibleImg = new window.kakao.maps.MarkerImage(
+            TRANSPARENT_GIF,
+            new window.kakao.maps.Size(1, 1),
+          );
+
+          /* ─── 업소 마커 생성 헬퍼 ─── */
           const bounds = new window.kakao.maps.LatLngBounds();
           let hasValidPins = false;
 
-          const addMarker = (biz: Business, position: any) => {
+          const addBusinessMarker = (biz: Business, position: any) => {
+            if (cancelled) return;
             hasValidPins = true;
-            positionsCache.current.set(biz.id, position); // zoom용 위치 캐시
+            positionsCache.current.set(biz.id, position);
+            bounds.extend(position);
+
+            // 티어 색상
             const sub = biz.subscriptions?.[0];
-            const activePlan = sub?.status === 'active' ? sub.plan : null;
-            const isPremium = activePlan === 'premium' || activePlan === 'elite';
-            const isStandard = activePlan === 'standard';
-            const size   = isPremium ? 20 : isStandard ? 16 : 12;
-            const bg     = isPremium ? '#f59e0b' : isStandard ? '#3b82f6' : '#71717a';
-            const shadow = isPremium
-              ? '0 0 0 5px rgba(245,158,11,0.3),0 2px 8px rgba(0,0,0,0.5)'
-              : isStandard
-              ? '0 0 0 4px rgba(59,130,246,0.25),0 2px 6px rgba(0,0,0,0.4)'
-              : '0 1px 4px rgba(0,0,0,0.4)';
-            const zIndex = isPremium ? 5 : isStandard ? 3 : 1;
+            const plan = sub?.status === 'active' ? sub.plan : null;
+            const isPremium = plan === 'premium' || plan === 'elite';
+            const isStandard = plan === 'standard';
+            const bgColor = isPremium ? '#d97706' : isStandard ? '#1d4ed8' : '#1e3a5f';
+            const zIdx = isPremium ? 5 : isStandard ? 3 : 1;
+
+            /* 라벨 CustomOverlay (이름표) */
             const el = document.createElement('div');
-            Object.assign(el.style, {
-              width: `${size}px`, height: `${size}px`,
-              background: bg, border: '2.5px solid #fff',
-              borderRadius: '50%', boxShadow: shadow,
-              cursor: 'pointer', transition: 'transform 0.15s',
-            });
-            el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.25)'; });
+            el.style.cssText = `
+              position:relative;
+              background:${bgColor};
+              color:#fff;
+              padding:4px 9px 4px;
+              border-radius:8px;
+              font-size:12px;
+              font-weight:700;
+              white-space:nowrap;
+              cursor:pointer;
+              box-shadow:0 2px 6px rgba(0,0,0,0.35);
+              user-select:none;
+              transition:transform 0.12s;
+              line-height:1.4;
+            `;
+            el.textContent = biz.name;
+
+            // 삼각형 화살표
+            const arrow = document.createElement('div');
+            arrow.style.cssText = `
+              position:absolute;
+              bottom:-5px;left:50%;
+              transform:translateX(-50%);
+              width:0;height:0;
+              border-left:5px solid transparent;
+              border-right:5px solid transparent;
+              border-top:5px solid ${bgColor};
+            `;
+            el.appendChild(arrow);
+
+            el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.06)'; });
             el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
             el.addEventListener('click', () => {
               if (onMarkerClick) onMarkerClick(biz.id);
               else router.push(`/places/${biz.id}`);
             });
-            new window.kakao.maps.CustomOverlay({ map, position, content: el, zIndex, yAnchor: 0.5 });
-            bounds.extend(position);
-          };
 
-          const geocoder = new window.kakao.maps.services.Geocoder();
-
-          const geocodeAndAdd = (biz: Business) => {
-            const addr = biz.address;
-            if (!addr) return;
-            geocoder.addressSearch(addr, (result: any[], status: string) => {
-              if (status === window.kakao.maps.services.Status.OK && result[0]) {
-                const pos = new window.kakao.maps.LatLng(
-                  parseFloat(result[0].y),
-                  parseFloat(result[0].x)
-                );
-                addMarker(biz, pos);
-                if (hasValidPins) map.setBounds(bounds);
-              }
+            const overlay = new window.kakao.maps.CustomOverlay({
+              position,
+              content: el,
+              yAnchor: 1.15,   // 화살표 포함 높이 고려
+              zIndex: zIdx,
             });
+            ownedOverlays.push(overlay);
+
+            /* 클러스터용 투명 Marker */
+            const marker = new window.kakao.maps.Marker({ position, image: invisibleImg });
+            clusterer.addMarker(marker);
+
+            /* 즉시 가시성 반영 */
+            updateOverlays();
+            if (hasValidPins) map.setBounds(bounds);
           };
+
+          /* ─── geocoder ─── */
+          const geocoder = new window.kakao.maps.services.Geocoder();
 
           businesses.forEach((biz) => {
             if (biz.lat && biz.lng) {
-              const position = new window.kakao.maps.LatLng(biz.lat, biz.lng);
-              addMarker(biz, position);
-              return;
+              addBusinessMarker(biz, new window.kakao.maps.LatLng(biz.lat, biz.lng));
+            } else if (biz.address) {
+              geocoder.addressSearch(biz.address, (result: any[], st: string) => {
+                if (cancelled) return;
+                if (st === window.kakao.maps.services.Status.OK && result[0]) {
+                  addBusinessMarker(
+                    biz,
+                    new window.kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)),
+                  );
+                }
+              });
             }
-            if (biz.address) geocodeAndAdd(biz);
           });
 
-          // 좌표가 있는 업소만 즉시 bounds 적용 (geocode는 비동기로 처리됨)
-          if (hasValidPins) map.setBounds(bounds);
+          /* ─── zoomTo ─── */
+          const zoomTo: ZoomToFn = (id: string) => {
+            const pos = positionsCache.current.get(id);
+            if (!pos) return;
+            try {
+              map.relayout();
+              map.setCenter(pos);
+              map.setLevel(4);
+            } catch { /* 무시 */ }
+          };
+
+          setStatus('ready');
+          if (onLoad) onLoad(map, zoomTo);
         });
-      } catch (e) {
+      } catch {
         if (!cancelled) setStatus('error');
       }
     };
 
-    // kakao SDK 로드 대기 (polling)
+    /* ─── SDK 로드 대기 ─── */
     let retryCount = 0;
-    const tryInit = (userLat: number, userLng: number) => {
+    const tryInit = (lat: number, lng: number) => {
       if (cancelled) return;
-
-      if (window.kakao) {
-        initMap(userLat, userLng);
-        return;
-      }
-
-      retryCount++;
-      if (retryCount > 25) { // 5초 후 포기
-        if (!cancelled) setStatus('error');
-        return;
-      }
-      setTimeout(() => tryInit(userLat, userLng), 200);
+      if (window.kakao) { initMap(lat, lng); return; }
+      if (++retryCount > 25) { if (!cancelled) setStatus('error'); return; }
+      setTimeout(() => tryInit(lat, lng), 200);
     };
 
-    // 현재 위치 → 없으면 서울 기본값
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => tryInit(pos.coords.latitude, pos.coords.longitude),
@@ -185,7 +258,12 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
       tryInit(DEFAULT_LAT, DEFAULT_LNG);
     }
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (clustererRef) { try { clustererRef.clear(); } catch { /* 무시 */ } }
+      ownedOverlays.forEach((o) => { try { o.setMap(null); } catch { /* 무시 */ } });
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businesses, router]);
 
   return (
@@ -194,10 +272,9 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
         fullscreen ? 'h-full' : 'h-[450px] rounded-[2.5rem] border border-zinc-800 shadow-2xl'
       }`}
     >
-      {/* 지도 컨테이너 */}
       <div ref={mapRef} className="w-full h-full" />
 
-      {/* 로딩 오버레이 */}
+      {/* 로딩 */}
       {status === 'loading' && (
         <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -207,43 +284,24 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
         </div>
       )}
 
-      {/* 에러 오버레이 */}
+      {/* 에러 */}
       {status === 'error' && (
         <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
           <div className="text-center space-y-2 px-6">
             <p className="text-zinc-400 text-sm font-bold">지도를 불러올 수 없습니다</p>
-            <p className="text-zinc-600 text-xs">카카오 지도 키 또는 도메인 설정을 확인해주세요</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-2 bg-amber-500 text-black text-xs font-black rounded-xl"
-            >
+            <button onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-2 bg-amber-500 text-black text-xs font-black rounded-xl">
               새로고침
             </button>
           </div>
         </div>
       )}
 
-      {/* 범례 + 위치 뱃지 */}
+      {/* 위치 뱃지 (로드 완료 시) */}
       {status === 'ready' && (
-        <>
-          <div className="absolute top-4 left-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-lg pointer-events-none">
-            실시간 위치 기반 탐색
-          </div>
-          <div className="absolute bottom-4 right-4 z-10 bg-zinc-950/90 backdrop-blur-md px-3 py-2 rounded-2xl border border-zinc-800 shadow-lg pointer-events-none flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow-[0_0_0_3px_rgba(245,158,11,0.3)]" />
-              <span className="text-[9px] font-black text-amber-400 uppercase tracking-wide">Premium</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-[0_0_0_2px_rgba(59,130,246,0.25)]" />
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-wide">Standard</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-zinc-500 border border-white" />
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Basic</span>
-            </div>
-          </div>
-        </>
+        <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-widest shadow pointer-events-none">
+          실시간 위치 기반 탐색
+        </div>
       )}
     </div>
   );
