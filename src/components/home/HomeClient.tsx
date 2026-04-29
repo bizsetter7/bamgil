@@ -278,17 +278,24 @@ export default function HomeClient({
         <div className={`md:hidden absolute inset-0 z-10 overflow-y-auto bg-white flex flex-col ${mobileTab === 'home' ? 'flex' : 'hidden'}`}>
           {/* 배너 슬라이더 */}
           {bannerBusinesses.length > 0 ? (
+            (() => {
+              const bn = bannerBusinesses[bannerIdx];
+              const bnGeo = bn ? geocoded.get(bn.id) : undefined;
+              const bnRegionLabel = bn ? (REGION_LABELS[bn.region_code ?? ''] ?? bn.region_code) : '';
+              const bnSubRegion = bnGeo?.region2 || (bn?.address ? (bn.address.trim().split(/\s+/)[1] ?? null) : null);
+              const bnLocation = bnSubRegion ? `${bnRegionLabel} ${bnSubRegion}` : bnRegionLabel;
+              return (
             <button
               className="relative h-52 bg-gray-900 shrink-0 w-full text-left"
-              onClick={() => { if (bannerBusinesses[bannerIdx]) handleSelect(bannerBusinesses[bannerIdx].id); }}
+              onClick={() => { if (bn) handleSelect(bn.id); }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={bannerBusinesses[bannerIdx]?.cover_image_url ?? ''} alt="" className="w-full h-full object-cover opacity-75" />
+              <img src={bn?.cover_image_url ?? ''} alt="" className="w-full h-full object-cover opacity-75" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <span className="text-[10px] font-black bg-amber-500 text-black px-2 py-0.5 rounded-full">AD</span>
-                <p className="text-white font-black text-xl mt-1 truncate">{bannerBusinesses[bannerIdx]?.name}</p>
-                <p className="text-white/70 text-xs">{bannerBusinesses[bannerIdx]?.category} · {REGION_LABELS[bannerBusinesses[bannerIdx]?.region_code ?? ''] ?? ''}</p>
+                <p className="text-white font-black text-xl mt-1 truncate">{bn?.name}</p>
+                <p className="text-white/70 text-xs">{bn?.category} · {bnLocation}</p>
               </div>
               {bannerBusinesses.length > 1 && (
                 <div className="absolute top-3 right-4 flex gap-1">
@@ -298,6 +305,8 @@ export default function HomeClient({
                 </div>
               )}
             </button>
+              );
+            })()
           ) : (
             <div className="h-52 shrink-0 bg-gradient-to-br from-gray-900 to-gray-700 flex flex-col items-center justify-center">
               <span className="text-4xl mb-2">🌙</span>
@@ -345,6 +354,11 @@ export default function HomeClient({
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
+                const geo = geocoded.get(biz.id);
+                const subRegion = geo?.region2 || (biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null);
+                const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
+                const dongLabel = geo?.region3 ?? null;
+                const distanceLabel = userPos && geo ? formatDistance(haversineKm(userPos, { lat: geo.lat, lng: geo.lng })) : null;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
@@ -368,10 +382,18 @@ export default function HomeClient({
                         </div>
                       )}
                     </div>
-                    <div className="p-2.5 space-y-0.5">
-                      <p className="text-[10px] text-gray-400 font-medium">{regionLabel}</p>
+                    <div className="p-2.5 space-y-1">
+                      <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <span className="inline-block text-[10px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {distanceLabel && (
+                          <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
+                        )}
+                        {dongLabel && (
+                          <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
+                        )}
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
                     </div>
                   </button>
                 );
@@ -395,6 +417,11 @@ export default function HomeClient({
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
+                const geo = geocoded.get(biz.id);
+                const subRegion = geo?.region2 || (biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null);
+                const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
+                const dongLabel = geo?.region3 ?? null;
+                const distanceLabel = userPos && geo ? formatDistance(haversineKm(userPos, { lat: geo.lat, lng: geo.lng })) : null;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
@@ -418,10 +445,18 @@ export default function HomeClient({
                         </div>
                       )}
                     </div>
-                    <div className="p-2.5 space-y-0.5">
-                      <p className="text-[10px] text-gray-400 font-medium">{regionLabel}</p>
+                    <div className="p-2.5 space-y-1">
+                      <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <span className="inline-block text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {distanceLabel && (
+                          <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
+                        )}
+                        {dongLabel && (
+                          <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
+                        )}
+                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
                     </div>
                   </button>
                 );
@@ -446,6 +481,11 @@ export default function HomeClient({
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
+                const geo = geocoded.get(biz.id);
+                const subRegion = geo?.region2 || (biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null);
+                const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
+                const dongLabel = geo?.region3 ?? null;
+                const distanceLabel = userPos && geo ? formatDistance(haversineKm(userPos, { lat: geo.lat, lng: geo.lng })) : null;
                 return (
                   <button key={biz.id} onClick={() => handleSelect(biz.id)}
                     className="shrink-0 w-36 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm text-left active:scale-95 transition-transform">
@@ -469,10 +509,18 @@ export default function HomeClient({
                         </div>
                       )}
                     </div>
-                    <div className="p-2.5 space-y-0.5">
-                      <p className="text-[10px] text-gray-400 font-medium">{regionLabel}</p>
+                    <div className="p-2.5 space-y-1">
+                      <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <span className="inline-block text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {distanceLabel && (
+                          <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
+                        )}
+                        {dongLabel && (
+                          <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
+                        )}
+                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
                     </div>
                   </button>
                 );
