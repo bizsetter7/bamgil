@@ -82,8 +82,8 @@ export default function BusinessCard({ business, compact = false, selected = fal
           ? 'bg-amber-50 border border-amber-300 shadow-sm'
           : 'bg-white hover:bg-gray-50 border border-gray-100 hover:border-gray-200'}`}
       >
-        {/* 썸네일 — 가로 120x115 (세로폭 확대) */}
-        <div className="relative shrink-0 w-[120px] h-[115px] rounded-xl overflow-hidden bg-gray-100">
+        {/* 썸네일 — 가로 130x115 (배지 가로 1줄 보장 위해 width 확장) */}
+        <div className="relative shrink-0 w-[130px] h-[115px] rounded-xl overflow-hidden bg-gray-100">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
@@ -93,17 +93,17 @@ export default function BusinessCard({ business, compact = false, selected = fal
               <span className="relative text-white font-black text-3xl leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
-          {/* 좌상단 배지 (인기 + 프리미엄 가로 2열 — 이미지 가림 최소화) */}
+          {/* 좌상단 배지 (인기 + 프리미엄 가로 1줄 — 130px 너비 안에 보장) */}
           {(isPopular || isPremiumTier) && (
-            <div className="absolute top-1.5 left-1.5 right-1.5 flex gap-1 flex-wrap">
+            <div className="absolute top-1.5 left-1.5 flex gap-1">
               {isPopular && (
-                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
-                  🔥 인기
+                <span className="bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm whitespace-nowrap">
+                  🔥인기
                 </span>
               )}
               {isPremiumTier && (
-                <span className="bg-amber-400 text-black text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
-                  ✓ 프리미엄
+                <span className="bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm whitespace-nowrap">
+                  ✓프리미엄
                 </span>
               )}
             </div>

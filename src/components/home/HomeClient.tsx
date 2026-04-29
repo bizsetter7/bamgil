@@ -761,10 +761,10 @@ export default function HomeClient({
               </button>
             </div>
 
-            {/* 좌우 분할 본문 */}
-            <div className="flex-1 flex min-h-0">
-              {/* ── 좌측: 시도 리스트 ── */}
-              <div className="w-32 sm:w-40 shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+            {/* 좌우 분할 본문 — 모달 max-h-[80vh] 안에서 좌·우 패널 각자 스크롤 */}
+            <div className="flex-1 flex min-h-0 max-h-[calc(80vh-65px)]">
+              {/* ── 좌측: 시도 리스트 (스크롤) ── */}
+              <div className="w-28 sm:w-36 shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
                 {PROVINCES.map(p => {
                   const isActive = overlayActiveProvince === p.key;
                   const count = provinceCounts[p.key] ?? 0;
@@ -786,11 +786,11 @@ export default function HomeClient({
                 })}
               </div>
 
-              {/* ── 우측: 구/군 리스트 ── */}
+              {/* ── 우측: 구/군 리스트 (스크롤) ── */}
               <div className="flex-1 overflow-y-auto p-4">
                 {overlayActiveProvince && (
                   <>
-                    {/* 시도 전체 선택 */}
+                    {/* 시도 전체 선택 — 클릭 시 즉시 반영 + 닫힘 */}
                     <button
                       onClick={() => {
                         setRegion(overlayActiveProvince);
@@ -805,7 +805,7 @@ export default function HomeClient({
                       </span>
                     </button>
 
-                    {/* 구/군 그리드 */}
+                    {/* 구/군 그리드 — 클릭 시 즉시 단일 선택 + 닫힘 */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                       {(DISTRICTS[overlayActiveProvince] || []).map(d => {
                         const isSelected = region === overlayActiveProvince && selectedSubRegions.includes(d);
@@ -814,15 +814,10 @@ export default function HomeClient({
                           <button
                             key={d}
                             onClick={() => {
-                              // 시도 자동 적용 + 구군 토글 (즉시 반영, 새로고침 없음)
+                              // 즉시 단일 선택 + 닫힘 — 사용자가 결과를 바로 확인
                               setRegion(overlayActiveProvince);
-                              setSelectedSubRegions(prev =>
-                                region === overlayActiveProvince && prev.includes(d)
-                                  ? prev.filter(s => s !== d)
-                                  : region === overlayActiveProvince
-                                    ? [...prev, d]
-                                    : [d]
-                              );
+                              setSelectedSubRegions([d]);
+                              setRegionOverlayOpen(false);
                             }}
                             className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-[12px] font-bold transition-colors
                               ${isSelected

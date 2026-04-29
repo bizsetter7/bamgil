@@ -231,7 +231,9 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
 
   const activePlan = getActivePlanFromList(business?.subscriptions);
   const isPremium = activePlan === 'premium' || activePlan === 'elite';
+  const isDeluxe = activePlan === 'deluxe';
   const isStandard = activePlan === 'standard';
+  const isPopular = isPremium || isDeluxe;
   const images = business?.images?.length ? business.images : (business?.cover_image_url ? [business.cover_image_url] : []);
   const menuItems = business?.menu_items ?? [];
   const extraFees = business?.extra_fees ?? [];
@@ -323,19 +325,24 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
 
             {/* ── 기본 정보 카드 ── */}
             <div className="bg-white px-4 pt-3 pb-4 border-b border-gray-100">
-              {/* 배지 행 */}
+              {/* 배지 행 — 가로 한 줄 (인기/프리미엄/공식파트너 + 카테고리) */}
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                {isPopular && (
+                  <span className="text-[10px] font-black text-white bg-orange-500 px-2 py-1 rounded-md leading-none">
+                    🔥 인기
+                  </span>
+                )}
                 {isPremium && (
-                  <span className="flex items-center gap-0.5 text-[10px] font-black text-white bg-amber-500 px-2 py-0.5 rounded-full">
-                    <Star size={8} fill="white" /> 프리미엄
+                  <span className="flex items-center gap-0.5 text-[10px] font-black text-black bg-amber-400 px-2 py-1 rounded-md leading-none">
+                    <Star size={8} fill="black" /> 프리미엄
                   </span>
                 )}
                 {isStandard && (
-                  <span className="flex items-center gap-0.5 text-[10px] font-black text-white bg-blue-600 px-2 py-0.5 rounded-full">
+                  <span className="flex items-center gap-0.5 text-[10px] font-black text-white bg-blue-600 px-2 py-1 rounded-md leading-none">
                     <Check size={8} /> 공식파트너
                   </span>
                 )}
-                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md leading-none">
                   {business.category}
                 </span>
               </div>
@@ -384,18 +391,15 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
                 </div>
               )}
 
-              {/* 전화 */}
+              {/* 전화 — 번호만 표시 (이름·직책은 위 헤더에 이미 노출) */}
               {(business.manager_phone ?? business.phone) && (
                 <div className="flex items-center gap-2 text-sm">
                   <Phone size={14} className="shrink-0 text-gray-400" />
-                  <span className="text-gray-600">
-                    {business.manager_name && <span>{maskName(business.manager_name)} 사장 · </span>}
-                    <a href={`tel:${business.manager_phone ?? business.phone}`}
-                      className="text-amber-600 font-bold hover:underline"
-                      onClick={() => logContact('call')}>
-                      {formatPhone(business.manager_phone ?? business.phone)} 전화
-                    </a>
-                  </span>
+                  <a href={`tel:${business.manager_phone ?? business.phone}`}
+                    className="text-amber-600 font-bold hover:underline"
+                    onClick={() => logContact('call')}>
+                    {formatPhone(business.manager_phone ?? business.phone)}
+                  </a>
                 </div>
               )}
             </div>
