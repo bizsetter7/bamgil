@@ -75,12 +75,19 @@ export default async function BusinessDetailPage({
 
   const { data: business } = await supabase
     .from('businesses')
-    .select('*, managers(*), subscriptions(*)')
+    .select('*, managers(*)')
     .eq('id', businessId)
     .eq('is_active', true)
     .single();
 
   if (!business) notFound();
+
+  // subscriptions 별도 쿼리 (PostgREST 임플리시트 join FK 인식 실패 회피)
+  const { data: subsData } = await supabase
+    .from('subscriptions')
+    .select('plan, status')
+    .eq('business_id', businessId);
+  business.subscriptions = subsData ?? [];
 
   const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === business.owner_user_id;

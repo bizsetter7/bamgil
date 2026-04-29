@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from('businesses')
-    .select('*, subscriptions(*)')
+    .select('*')
     .eq('id', businessId)
     .single();
 
@@ -25,5 +25,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ business: data });
+  // subscriptions 별도 쿼리 (PostgREST 임플리시트 join FK 인식 실패 회피)
+  const { data: subs } = await supabaseAdmin
+    .from('subscriptions')
+    .select('plan, status, plan_name, billing_period, period_months, payment_reference, confirmed_at')
+    .eq('business_id', businessId);
+
+  return NextResponse.json({ business: { ...data, subscriptions: subs ?? [] } });
 }
