@@ -385,14 +385,18 @@ export default function HomeClient({
                     <div className="p-2.5 space-y-1">
                       <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <div className="flex items-center gap-1 flex-wrap">
+                      {/* 거리·동 줄 (항상 자리 차지하여 카드 높이 일관) */}
+                      <div className="flex items-center gap-1 min-h-[18px]">
                         {distanceLabel && (
                           <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
                         )}
                         {dongLabel && (
                           <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
                         )}
-                        <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
+                      {/* 카테고리 — 별도 줄 고정 (카드 높이 정렬) */}
+                      <div>
+                        <span className="inline-block text-[10px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full">{biz.category}</span>
                       </div>
                     </div>
                   </button>
@@ -448,14 +452,16 @@ export default function HomeClient({
                     <div className="p-2.5 space-y-1">
                       <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1 min-h-[18px]">
                         {distanceLabel && (
                           <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
                         )}
                         {dongLabel && (
                           <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
                         )}
-                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
+                      <div>
+                        <span className="inline-block text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
                       </div>
                     </div>
                   </button>
@@ -512,14 +518,16 @@ export default function HomeClient({
                     <div className="p-2.5 space-y-1">
                       <p className="text-[10px] text-gray-400 font-medium truncate">{locationLabel}</p>
                       <p className="text-sm font-black text-gray-900 truncate leading-tight">{biz.name}</p>
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1 min-h-[18px]">
                         {distanceLabel && (
                           <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md leading-none border border-amber-200">{distanceLabel}</span>
                         )}
                         {dongLabel && (
                           <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md leading-none">{dongLabel}</span>
                         )}
-                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
+                      </div>
+                      <div>
+                        <span className="inline-block text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{biz.category}</span>
                       </div>
                     </div>
                   </button>
