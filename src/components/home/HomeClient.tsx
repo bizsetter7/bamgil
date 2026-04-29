@@ -39,19 +39,32 @@ interface Business {
 
 interface HomeClientProps {
   businesses: Business[];
-  region?: string;
-  category?: string;
+  initialRegion?: string;
+  initialCategory?: string;
+  provinceCounts?: Record<string, number>;
+  districtCounts?: Record<string, Record<string, number>>;
 }
 
-export default function HomeClient({ businesses, region, category }: HomeClientProps) {
+export default function HomeClient({
+  businesses,
+  initialRegion,
+  initialCategory,
+  provinceCounts = {},
+  districtCounts = {},
+}: HomeClientProps) {
   const [mobileTab, setMobileTab] = useState<'home' | 'list' | 'map'>('home');
   const [bannerIdx, setBannerIdx] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // 클라이언트 측 region/category state — 새로고침 없이 즉시 필터링
+  const [region, setRegion] = useState<string | null>(initialRegion ?? null);
+  const [category, setCategory] = useState<string | null>(initialCategory ?? null);
+
   // 오버레이 및 필터 상태
   const [regionOverlayOpen, setRegionOverlayOpen] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  // 좌우 분할 UI: 좌측에서 시도 클릭하면 우측에 districts 표시
+  const [overlayActiveProvince, setOverlayActiveProvince] = useState<string | null>(initialRegion ?? 'seoul');
   const [selectedSubRegions, setSelectedSubRegions] = useState<string[]>([]);
   const [nearMeActive, setNearMeActive] = useState(false);
   const mapInstanceRef = useRef<any>(null);
@@ -91,7 +104,17 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
   const filtered = useMemo(() => {
     let result = businesses;
-    
+
+    // 0. 시도(region) 필터
+    if (region) {
+      result = result.filter((b) => b.region_code === region);
+    }
+
+    // 0-1. 카테고리 필터
+    if (category) {
+      result = result.filter((b) => b.category === category);
+    }
+
     // 1. 검색어 필터
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -102,13 +125,13 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
 
     // 2. 서브 지역 필터 (즉시 필터링)
     if (selectedSubRegions.length > 0) {
-      result = result.filter((b) => 
+      result = result.filter((b) =>
         selectedSubRegions.some(sub => (b.address ?? '').includes(sub))
       );
     }
 
     return result;
-  }, [businesses, searchQuery, selectedSubRegions]);
+  }, [businesses, region, category, searchQuery, selectedSubRegions]);
 
   // lat/lng 있거나, address만 있어도 KakaoMap geocoder가 핀 추가 가능
   // useMemo 필수 — 매 렌더 새 배열 시 KakaoMap useEffect 재실행되어 지도 깜빡임
@@ -250,15 +273,15 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
               />
             </div>
             <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden pb-0.5">
-              <a href={`/${region ? `?region=${region}` : ''}`}
+              <button onClick={() => setCategory(null)}
                 className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold border transition-all ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                 전체
-              </a>
+              </button>
               {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '홀덤펍'].map(cat => (
-                <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
+                <button key={cat} onClick={() => setCategory(cat)}
                   className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold border transition-all ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                   {cat}
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -498,17 +521,17 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
               <span className="text-[9px] font-black uppercase tracking-widest">카테고리</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              <a href={`/${region ? `?region=${region}` : ''}`}
+              <button onClick={() => setCategory(null)}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
                   ${!category ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
                 전체
-              </a>
+              </button>
               {['룸살롱', '노래주점', '유흥주점', '나이트', '호스트바', '홀덤펍', '일반', '기타'].map((cat) => (
-                <a key={cat} href={`/?category=${encodeURIComponent(cat)}${region ? `&region=${region}` : ''}`}
+                <button key={cat} onClick={() => setCategory(cat)}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all
                     ${category === cat ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-800'}`}>
                   {cat}
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -709,84 +732,117 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
         </div>
       </div>
 
-      {/* ── 지역 선택 풀스크린 오버레이 ── */}
+      {/* ── 지역 선택 풀스크린 오버레이 (좌우 분할 + 카운트) ── */}
       {regionOverlayOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setRegionOverlayOpen(false)}>
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg text-gray-900">지역 선택</h3>
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* 헤더 */}
+            <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200 shrink-0">
+              <div className="flex items-center gap-3">
+                <h3 className="font-bold text-lg text-gray-900">지역 선택</h3>
+                <button
+                  onClick={() => { setRegion(null); setSelectedSubRegions([]); }}
+                  className={`text-xs font-black px-3 py-1.5 rounded-full transition-colors
+                    ${!region ? 'bg-amber-500 text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  전체
+                </button>
+                {(region || selectedSubRegions.length > 0) && (
+                  <button
+                    onClick={() => { setRegion(null); setSelectedSubRegions([]); }}
+                    className="text-[11px] text-gray-400 font-bold hover:text-gray-700"
+                  >
+                    초기화
+                  </button>
+                )}
+              </div>
               <button onClick={() => setRegionOverlayOpen(false)} className="text-gray-400 hover:text-gray-700">
                 <X size={20} />
               </button>
             </div>
 
-            {/* 1단계: 시/도 선택 */}
-            {!selectedProvince ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                <a
-                  href={`/${category ? `?category=${category}` : ''}`}
-                  onClick={() => { setRegionOverlayOpen(false); setSelectedSubRegions([]); }}
-                  className="py-2 px-2 text-center rounded-xl bg-amber-500 text-black font-bold text-sm"
-                >
-                  전체
-                </a>
-                {PROVINCES.map(p => (
-                  <button
-                    key={p.key}
-                    onClick={() => setSelectedProvince(p.key)}
-                    className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-700 transition-colors"
-                  >
-                    {p.name}
-                  </button>
-                ))}
+            {/* 좌우 분할 본문 */}
+            <div className="flex-1 flex min-h-0">
+              {/* ── 좌측: 시도 리스트 ── */}
+              <div className="w-32 sm:w-40 shrink-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+                {PROVINCES.map(p => {
+                  const isActive = overlayActiveProvince === p.key;
+                  const count = provinceCounts[p.key] ?? 0;
+                  return (
+                    <button
+                      key={p.key}
+                      onClick={() => setOverlayActiveProvince(p.key)}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold transition-colors text-left
+                        ${isActive ? 'bg-white text-amber-600 border-l-4 border-amber-500' : 'text-gray-700 hover:bg-white border-l-4 border-transparent'}`}
+                    >
+                      <span>{p.name}</span>
+                      {count > 0 && (
+                        <span className={`text-[10px] font-black ${isActive ? 'text-amber-500' : 'text-gray-400'}`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            ) : (
-              // 2단계: 구/군 선택
-              <div>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                  <button
-                    onClick={() => setSelectedProvince(null)}
-                    className="text-sm font-bold text-gray-500 flex items-center gap-1 hover:text-gray-900"
-                  >
-                    <ChevronDown size={14} className="rotate-90" />
-                    {PROVINCES.find(p => p.key === selectedProvince)?.name}
-                  </button>
-                  <a
-                    href={`/?region=${selectedProvince}${category ? `&category=${category}` : ''}`}
-                    onClick={() => { setRegionOverlayOpen(false); setSelectedSubRegions([]); }}
-                    className="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full"
-                  >
-                    전체 선택
-                  </a>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {(DISTRICTS[selectedProvince] || []).map(d => {
-                    const isSelected = selectedSubRegions.includes(d);
-                    return (
-                      <button
-                        key={d}
-                        onClick={() => {
-                          if (region === selectedProvince) {
-                            setSelectedSubRegions(prev =>
-                              prev.includes(d) ? prev.filter(s => s !== d) : [...prev, d]
-                            );
-                          } else {
-                            window.location.href = `/?region=${selectedProvince}${category ? `&category=${category}` : ''}`;
-                          }
-                        }}
-                        className={`py-2 px-2 rounded-xl text-sm font-bold transition-colors ${
-                          isSelected
-                            ? 'bg-amber-500 text-black'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    );
-                  })}
-                </div>
+
+              {/* ── 우측: 구/군 리스트 ── */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {overlayActiveProvince && (
+                  <>
+                    {/* 시도 전체 선택 */}
+                    <button
+                      onClick={() => {
+                        setRegion(overlayActiveProvince);
+                        setSelectedSubRegions([]);
+                        setRegionOverlayOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-sm font-black text-amber-700 transition-colors"
+                    >
+                      <span>{PROVINCES.find(p => p.key === overlayActiveProvince)?.name} 전체</span>
+                      <span className="text-[11px] font-black text-amber-500">
+                        {provinceCounts[overlayActiveProvince] ?? 0}
+                      </span>
+                    </button>
+
+                    {/* 구/군 그리드 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {(DISTRICTS[overlayActiveProvince] || []).map(d => {
+                        const isSelected = region === overlayActiveProvince && selectedSubRegions.includes(d);
+                        const cnt = districtCounts[overlayActiveProvince]?.[d] ?? 0;
+                        return (
+                          <button
+                            key={d}
+                            onClick={() => {
+                              // 시도 자동 적용 + 구군 토글 (즉시 반영, 새로고침 없음)
+                              setRegion(overlayActiveProvince);
+                              setSelectedSubRegions(prev =>
+                                region === overlayActiveProvince && prev.includes(d)
+                                  ? prev.filter(s => s !== d)
+                                  : region === overlayActiveProvince
+                                    ? [...prev, d]
+                                    : [d]
+                              );
+                            }}
+                            className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-[12px] font-bold transition-colors
+                              ${isSelected
+                                ? 'bg-amber-500 text-black'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                          >
+                            <span className="truncate">{d}</span>
+                            {cnt > 0 && (
+                              <span className={`text-[9px] font-black ml-1 ${isSelected ? 'text-amber-800' : 'text-gray-400'}`}>
+                                {cnt}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

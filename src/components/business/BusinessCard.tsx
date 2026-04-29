@@ -93,16 +93,20 @@ export default function BusinessCard({ business, compact = false, selected = fal
               <span className="relative text-white font-black text-3xl leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
-          {/* 좌상단 배지 (인기 + 프리미엄 세로 적층 — 두툼하게) */}
-          {isPopular && (
-            <span className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
-              🔥 인기
-            </span>
-          )}
-          {isPremiumTier && (
-            <span className={`absolute ${isPopular ? 'top-[30px]' : 'top-1.5'} left-1.5 bg-amber-400 text-black text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm`}>
-              ✓ 프리미엄
-            </span>
+          {/* 좌상단 배지 (인기 + 프리미엄 가로 2열 — 이미지 가림 최소화) */}
+          {(isPopular || isPremiumTier) && (
+            <div className="absolute top-1.5 left-1.5 right-1.5 flex gap-1 flex-wrap">
+              {isPopular && (
+                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
+                  🔥 인기
+                </span>
+              )}
+              {isPremiumTier && (
+                <span className="bg-amber-400 text-black text-[10px] font-black px-2 py-1 rounded-md leading-none shadow-sm">
+                  ✓ 프리미엄
+                </span>
+              )}
+            </div>
           )}
         </div>
 
