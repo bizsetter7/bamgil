@@ -531,47 +531,47 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                       key={biz.id}
                       href={`/places/${biz.id}`}
                       onClick={(e) => { e.preventDefault(); handleSelect(biz.id); }}
-                      className="flex gap-3 px-4 py-4 active:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex gap-3.5 px-4 py-4 active:bg-gray-50 transition-colors cursor-pointer"
                     >
-                      {/* 썸네일 — 밤맵 capture1 스타일: 더 큰 이미지 */}
-                      <div className="shrink-0 w-[116px] h-[92px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center relative">
+                      {/* 썸네일 — 밤맵 스타일: 크고 선명한 이미지 */}
+                      <div className="shrink-0 w-[150px] h-[120px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center relative">
                         {biz.cover_image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={biz.cover_image_url} alt={biz.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-1">
-                            <span className="text-[11px] font-black text-gray-400 leading-tight text-center">사진<br />없음</span>
+                            <span className="text-xs font-black text-gray-400 leading-tight text-center">사진<br />없음</span>
                           </div>
                         )}
                         {/* 티어 배지 */}
                         {isPopular && (
-                          <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                          <div className="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full leading-none shadow-sm">
                             🔥 인기
                           </div>
                         )}
                         {isPremiumTier && (
-                          <div className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                          <div className="absolute top-[26px] left-2 bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full leading-none shadow-sm">
                             ✓ 프리미엄
                           </div>
                         )}
                       </div>
 
                       {/* 텍스트 정보 */}
-                      <div className="flex-1 min-w-0 py-0.5 space-y-1">
+                      <div className="flex-1 min-w-0 py-1 space-y-1.5">
                         {/* 지역(+상세) + 카테고리 */}
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] text-gray-400 font-medium">{locationLabel}</span>
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                          <span className="text-[11px] text-gray-400 font-medium">{locationLabel}</span>
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
                             {biz.category}
                           </span>
                         </div>
                         {/* 업소명 */}
-                        <p className="text-gray-900 font-black text-[15px] leading-snug truncate">
+                        <p className="text-gray-900 font-black text-base leading-snug line-clamp-2">
                           {biz.name}
                         </p>
                         {/* 실장명 */}
                         {biz.manager_name && (
-                          <p className="text-gray-500 text-[11px]">{maskName(biz.manager_name)} 실장</p>
+                          <p className="text-gray-500 text-[12px]">{maskName(biz.manager_name)} 실장</p>
                         )}
                         {/* 영업시간 해시태그 형식 */}
                         {hoursHashtag && (
@@ -579,11 +579,11 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                         )}
                         {/* 주소 (시간 없을 때만) */}
                         {!hoursHashtag && !todayHours && (
-                          <p className="text-gray-400 text-[10px] truncate">{addressLine}</p>
+                          <p className="text-gray-400 text-[11px] truncate">{addressLine}</p>
                         )}
                         {/* 시간 텍스트 (해시태그 없고 일반 텍스트 있을 때) */}
                         {!hoursHashtag && todayHours && (
-                          <p className="text-gray-400 text-[10px] truncate">{todayHours}</p>
+                          <p className="text-gray-400 text-[11px] truncate">{todayHours}</p>
                         )}
                       </div>
                     </a>
