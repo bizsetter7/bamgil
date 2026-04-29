@@ -515,8 +515,9 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 {filtered.map((biz) => {
                   const sub = biz.subscriptions?.[0];
                   const activePlan = sub?.status === 'active' ? sub.plan : null;
-                  const isPremium = activePlan === 'premium' || activePlan === 'elite';
-                  const isStandard = activePlan === 'standard';
+                  const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
+                  const isDeluxe = activePlan === 'deluxe';
+                  const isPopular = isPremiumTier || isDeluxe;
                   const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
                   // address에서 두번째 단어(시/군/구) 추출 → "경기 수원시" 형태
                   const subRegion = biz.address ? (biz.address.trim().split(/\s+/)[1] ?? null) : null;
@@ -543,14 +544,14 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                           </div>
                         )}
                         {/* 티어 배지 */}
-                        {isPremium && (
-                          <div className="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                            프리미엄
+                        {isPopular && (
+                          <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            🔥 인기
                           </div>
                         )}
-                        {isStandard && (
-                          <div className="absolute top-1.5 left-1.5 bg-blue-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                            스탠다드
+                        {isPremiumTier && (
+                          <div className="absolute top-[22px] left-1.5 bg-amber-400 text-black text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            ✓ 프리미엄
                           </div>
                         )}
                       </div>

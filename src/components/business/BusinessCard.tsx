@@ -39,6 +39,7 @@ interface BusinessCardProps {
     phone?: string | null;
     open_chat_url?: string | null;
     cover_image_url?: string | null;
+    subscriptions?: { plan: string; status: string }[] | null;
   };
   compact?: boolean;
   selected?: boolean;
@@ -50,6 +51,12 @@ export default function BusinessCard({ business, compact = false, selected = fal
   const categoryLabel = business.category;
   const categoryGradient = CATEGORY_GRADIENTS[business.category] ?? 'from-gray-300 via-gray-400 to-gray-500';
   const firstChar = business.name?.[0] ?? '?';
+
+  const sub = business.subscriptions?.[0];
+  const activePlan = sub?.status === 'active' ? sub.plan : null;
+  const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
+  const isDeluxe = activePlan === 'deluxe';
+  const isPopular = isPremiumTier || isDeluxe;
 
   /* ── 사이드패널 컴팩트 카드 ── */
   if (compact) {
@@ -68,7 +75,7 @@ export default function BusinessCard({ business, compact = false, selected = fal
           : 'hover:bg-gray-50 border border-transparent hover:border-gray-200'}`}
       >
         {/* 썸네일 */}
-        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
@@ -78,14 +85,27 @@ export default function BusinessCard({ business, compact = false, selected = fal
               <span className="relative text-white font-black text-base leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
+          {/* 배지 오버레이 */}
+          {isPopular && (
+            <div className="absolute bottom-0 left-0 right-0 bg-orange-500/90 text-white text-[7px] font-black text-center py-0.5 leading-none">
+              🔥 인기
+            </div>
+          )}
         </div>
 
         {/* 정보 */}
         <div className="flex-1 min-w-0 space-y-0.5">
-          <h3 className={`text-sm font-bold truncate transition-colors leading-tight
-            ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
-            {business.name}
-          </h3>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h3 className={`text-sm font-bold truncate transition-colors leading-tight
+              ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
+              {business.name}
+            </h3>
+            {isPremiumTier && (
+              <span className="shrink-0 text-[7px] font-black bg-amber-400 text-black px-1 py-0.5 rounded leading-none">
+                ✓ 프리미엄
+              </span>
+            )}
+          </div>
           <p className="text-[10px] text-gray-500 font-medium truncate leading-tight">
             {locationText}
           </p>

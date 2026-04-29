@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { maskName } from '@/lib/maskName';
 
 interface Business {
   id: string;
@@ -10,6 +11,7 @@ interface Business {
   lng: number | null;
   address?: string | null;
   category: string;
+  manager_name?: string | null;
   subscriptions?: { plan: string; status: string }[] | null;
 }
 
@@ -177,16 +179,70 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             `;
             el.appendChild(arrow);
 
-            el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.06)'; });
-            el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
             el.addEventListener('click', () => {
               if (onMarkerClick) onMarkerClick(biz.id);
               else router.push(`/places/${biz.id}`);
             });
 
+            /* 영업진 팝업 (hover 전용 — 데스크탑) */
+            const managers = biz.manager_name
+              ? biz.manager_name.split(/[,，、\/]/).map(s => s.trim()).filter(Boolean)
+              : [];
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:relative;display:inline-block;';
+
+            if (managers.length > 0) {
+              const popup = document.createElement('div');
+              popup.style.cssText = `
+                display:none;
+                position:absolute;
+                bottom:calc(100% + 6px);
+                left:50%;
+                transform:translateX(-50%);
+                background:#18181b;
+                color:#fff;
+                border-radius:10px;
+                padding:8px 12px;
+                white-space:nowrap;
+                font-size:11px;
+                font-weight:700;
+                box-shadow:0 4px 16px rgba(0,0,0,0.45);
+                pointer-events:none;
+                z-index:200;
+                line-height:1.6;
+                border:1px solid rgba(255,255,255,0.08);
+              `;
+              const header = document.createElement('div');
+              header.textContent = '👤 영업진';
+              header.style.cssText = 'color:#f59e0b;font-size:10px;font-weight:900;margin-bottom:4px;';
+              popup.appendChild(header);
+              managers.forEach((m) => {
+                const row = document.createElement('div');
+                row.textContent = `${maskName(m)} 실장`;
+                row.style.cssText = 'color:#e4e4e7;';
+                popup.appendChild(row);
+              });
+              wrapper.appendChild(popup);
+
+              wrapper.addEventListener('mouseenter', () => {
+                popup.style.display = 'block';
+                el.style.transform = 'scale(1.06)';
+              });
+              wrapper.addEventListener('mouseleave', () => {
+                popup.style.display = 'none';
+                el.style.transform = 'scale(1)';
+              });
+            } else {
+              wrapper.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.06)'; });
+              wrapper.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
+            }
+
+            wrapper.appendChild(el);
+
             const overlay = new window.kakao.maps.CustomOverlay({
               position,
-              content: el,
+              content: wrapper,
               yAnchor: 1.15,   // 화살표 포함 높이 고려
               zIndex: zIdx,
             });
