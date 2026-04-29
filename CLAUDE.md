@@ -140,22 +140,40 @@ fetch('/api/contacts', {
 | 04-26 (Week7) | 지역 풀스크린 오버레이(2단계), CTA 5개 버튼, 내주변 필터(geolocation), SEO 지역랜딩 14개, sitemap/robots |
 | 04-26 (Hotfix) | SSG 미작동 수정(직접 URL), tc_price 컬럼 제거→category 배지 |
 | 04-27 (Week8) | DetailPanel 전체정보 통합(허가배지+사업자번호마스킹), 모바일 슬라이드 패널, 관리자 버튼 제거 |
+| 04-29 (Week9~10) | 전체 화이트 테마, DetailPanel 경쟁사 레이아웃(슬라이더+퀵인포+미니맵), 잘못된정보 제보 모달+API(bamgil_reports), 영업시간 파싱(getTodayHours/Hashtag), Header 드로어 섹션구조, MiniMap 컴포넌트 |
+| 04-29 (Week11) | 모바일 3탭(홈/목록/지도), 홈탭 배너슬라이더+신규오픈/인기/신규입점 가로스크롤 섹션, 목록탭 캡처1스타일 카드(116x92 이미지+해시태그시간), 홀덤펍 카테고리 추가 |
+| 04-29 (Week12) | **개인회원 시스템**: Google OAuth 로그인, 역할선택 온보딩(손님/업체), AuthButton(Header), 찜하기(bamgil_favorites+API+❤️버튼), 리뷰/평점(bamgil_reviews+API+별점폼+목록), 마이페이지(/my), proxy.ts 라우트 보호 |
 
 ---
 
-## 9. 미완료 항목
+## 9. 신규 테이블 (04-29 추가)
 
-- ❌ 리뷰 시스템 (reviews 테이블 존재, UI 미구현)
-- ❌ 찜하기 서버 저장 (현재 localStorage만)
+```
+bamgil_reports    — 잘못된 정보 제보 (reason, content, contact, status)
+bamgil_user_profiles — 손님 프로필 (nickname, email) — RLS 본인만
+bamgil_favorites  — 찜하기 (user_id, business_id UNIQUE) — RLS 본인만
+bamgil_reviews    — 리뷰/평점 (user_id, business_id UNIQUE, rating 1~5, content) — RLS 공개읽기/본인쓰기
+```
+
+---
+
+## 10. 미완료 항목
+
+- ❌ 쿠폰 시스템 (bamgil_coupons: 업체 발급, 손님 수령) — Phase 3
 - ❌ 입소신청 플로우 완성
 - ❌ 고급 필터 (가격대, 특징 등)
-- ❌ 랭킹 페이지
+- ❌ 랭킹 페이지 (리뷰 평점 기반)
+- ❌ 앱화 (React Native / Expo — Phase 4)
 
 ---
 
-## 10. 알려진 주의사항
+## 11. 알려진 주의사항
 
 - SSG 페이지(`[region]/page.tsx`)에서 `createClient()` 쓰면 빌드 실패 → 직접 fetch 사용
 - `tc_price` 컬럼 없음 (제거됨) — category 배지로 대체
 - 카카오맵은 SSR 불가 → `use client` + `window.kakao` 필수
 - businesses.id = uuid (P2의 shops.id = bigint와 다름 — 혼동 주의)
+- **proxy.ts** (Next.js 16) — `middleware.ts` 아님. 함수명도 `proxy`로 export
+- **리뷰 닉네임 조인**: FK 없음 → `/api/reviews`에서 `user_id IN [...]` 수동 조회로 처리
+- **Google OAuth 동작 전제**: Supabase 대시보드 → Authentication → Providers → Google 활성화 필수
+- **OAuth Redirect URL 등록 필수**: `https://www.bamgil.kr/auth/callback` (Supabase Auth Settings)

@@ -13,28 +13,45 @@ export async function GET(req: NextRequest) {
   const businessId = req.nextUrl.searchParams.get('businessId');
   if (!businessId) return NextResponse.json({ reviews: [], average: 0, count: 0 });
 
-  const { data: reviews } = await supabaseAdmin
+  // FK 없이 안전하게: 리뷰 먼저 조회
+  const { data: rawReviews } = await supabaseAdmin
     .from('bamgil_reviews')
-    .select('id, rating, content, created_at, user_id, bamgil_user_profiles(nickname)')
+    .select('id, rating, content, created_at, user_id')
     .eq('business_id', businessId)
     .eq('is_visible', true)
     .order('created_at', { ascending: false })
     .limit(30);
 
-  const list = reviews ?? [];
+  const rawList = rawReviews ?? [];
+
+  // 닉네임 일괄 조회 (user_id 목록)
+  let nicknameMap: Record<string, string> = {};
+  if (rawList.length > 0) {
+    const userIds = [...new Set(rawList.map((r) => r.user_id as string))];
+    const { data: profiles } = await supabaseAdmin
+      .from('bamgil_user_profiles')
+      .select('id, nickname')
+      .in('id', userIds);
+    if (profiles) {
+      nicknameMap = Object.fromEntries(profiles.map((p) => [p.id, p.nickname]));
+    }
+  }
+
+  const list = rawList.map((r) => ({
+    ...r,
+    bamgil_user_profiles: { nickname: nicknameMap[r.user_id] ?? '익명' },
+  }));
+
   const count = list.length;
   const average =
     count > 0
-      ? Math.round((list.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / count) * 10) / 10
+      ? Math.round((list.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10
       : 0;
 
-  // 현재 로그인 유저의 리뷰 확인
+  // 현재 로그인 유저의 리뷰
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let myReview = null;
-  if (user) {
-    myReview = list.find((r: { user_id: string }) => r.user_id === user.id) ?? null;
-  }
+  const myReview = user ? (list.find((r) => r.user_id === user.id) ?? null) : null;
 
   return NextResponse.json({ reviews: list, average, count, myReview });
 }
