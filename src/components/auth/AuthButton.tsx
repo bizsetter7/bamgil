@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Heart, LogOut, ChevronDown, User, LogIn } from 'lucide-react';
+import { Heart, LogOut, ChevronDown, LogIn, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -134,6 +134,17 @@ export default function AuthButton() {
               <Heart size={14} className="text-pink-500" />
               내 찜 목록
             </Link>
+            {/* 업체 입점 */}
+            <a
+              href="https://www.yasajang.kr"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-amber-50 transition-colors"
+            >
+              <Building2 size={14} className="text-amber-500" />
+              업체 사장님이신가요?
+            </a>
             {/* 로그아웃 — 항상 보이게 */}
             <button
               onClick={handleLogout}

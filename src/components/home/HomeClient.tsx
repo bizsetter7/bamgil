@@ -116,13 +116,30 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const handleSelect = (id: string) => {
     const newId = selectedId === id ? null : id;
 
-    // 지도 줌인 (항상 시도)
-    const biz = businesses.find(b => b.id === id);
-    if (biz?.lat && biz?.lng && mapInstanceRef.current && newId) {
+    // 지도 줌인 헬퍼
+    const doZoom = (lat: number, lng: number) => {
       try {
-        mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(biz.lat, biz.lng));
+        mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(lat, lng));
         mapInstanceRef.current.setLevel(4);
       } catch { /* kakao 미로드 시 무시 */ }
+    };
+
+    const biz = businesses.find(b => b.id === id);
+    if (mapInstanceRef.current && newId && biz) {
+      if (biz.lat && biz.lng) {
+        // ① 좌표 있으면 바로 줌
+        doZoom(biz.lat, biz.lng);
+      } else if (biz.address && window.kakao) {
+        // ② 좌표 없으면 주소 geocoding 후 줌
+        window.kakao.maps.load(() => {
+          const geocoder = new window.kakao.maps.services.Geocoder();
+          geocoder.addressSearch(biz.address!, (result: { x: string; y: string }[], status: string) => {
+            if (status === window.kakao.maps.services.Status.OK && result[0]) {
+              doZoom(parseFloat(result[0].y), parseFloat(result[0].x));
+            }
+          });
+        });
+      }
     }
 
     // 모바일 지도탭: 줌 보여준 후 300ms 뒤 디테일 패널 오픈
