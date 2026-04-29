@@ -132,6 +132,17 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           /* ─── 업소 마커 생성 헬퍼 ─── */
           const bounds = new window.kakao.maps.LatLngBounds();
           let hasValidPins = false;
+          const allClusterMarkers: any[] = [];   // 배치 추가용
+
+          /* 모든 마커 수집 완료 후 한 번만 finalize */
+          const finalizeMarkers = () => {
+            if (cancelled) return;
+            if (allClusterMarkers.length > 0) {
+              clusterer.addMarkers(allClusterMarkers);
+            }
+            updateOverlays();
+            if (hasValidPins) map.setBounds(bounds);
+          };
 
           const addBusinessMarker = (biz: Business, position: any) => {
             if (cancelled) return;
@@ -248,13 +259,9 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             });
             ownedOverlays.push(overlay);
 
-            /* 클러스터용 투명 Marker */
+            /* 클러스터용 투명 Marker — 배치 수집 */
             const marker = new window.kakao.maps.Marker({ position, image: invisibleImg });
-            clusterer.addMarker(marker);
-
-            /* 즉시 가시성 반영 */
-            updateOverlays();
-            if (hasValidPins) map.setBounds(bounds);
+            allClusterMarkers.push(marker);
           };
 
           /* ─── geocoder ─── */
@@ -268,6 +275,10 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
               .replace(/\s+[가-힣]*\d*동\s+\d+호.*$/, '')
               .trim();
 
+          // geocoding 필요한 업소 수 추적
+          const addressOnlyBizs = businesses.filter(b => !(b.lat && b.lng) && !!b.address);
+          let pendingGeocode = addressOnlyBizs.length;
+
           businesses.forEach((biz) => {
             if (biz.lat && biz.lng) {
               addBusinessMarker(biz, new window.kakao.maps.LatLng(biz.lat, biz.lng));
@@ -280,9 +291,15 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
                     new window.kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)),
                   );
                 }
+                pendingGeocode--;
+                // 모든 geocoding 완료 시 finalize
+                if (pendingGeocode === 0) finalizeMarkers();
               });
             }
           });
+
+          // geocoding 없는 경우(전부 lat/lng) 즉시 finalize
+          if (pendingGeocode === 0) finalizeMarkers();
 
           /* ─── zoomTo ─── */
           const zoomTo: ZoomToFn = (id: string) => {
