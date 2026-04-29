@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import type { ZoomToFn } from '@/components/map/KakaoMap';
 import { Map as MapIcon, Grid, Home, Search, X, MapPin, Filter, ChevronDown, Navigation } from 'lucide-react';
 import { PROVINCES, DISTRICTS } from '@/lib/regions';
 import BusinessCard from '@/components/business/BusinessCard';
@@ -53,6 +54,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const [selectedSubRegions, setSelectedSubRegions] = useState<string[]>([]);
   const [nearMeActive, setNearMeActive] = useState(false);
   const mapInstanceRef = useRef<any>(null);
+  const zoomFnRef = useRef<ZoomToFn | null>(null);
 
   const handleNearMe = () => {
     if (!navigator.geolocation) return;
@@ -113,42 +115,35 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
       return bT - aT;
     }).slice(0, 12), [businesses]);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = useCallback((id: string) => {
     const newId = selectedId === id ? null : id;
 
-    // 지도 줌인 헬퍼
-    const doZoom = (lat: number, lng: number) => {
-      try {
-        mapInstanceRef.current.setCenter(new window.kakao.maps.LatLng(lat, lng));
-        mapInstanceRef.current.setLevel(4);
-      } catch { /* kakao 미로드 시 무시 */ }
-    };
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    const biz = businesses.find(b => b.id === id);
-    if (mapInstanceRef.current && newId && biz) {
-      if (biz.lat && biz.lng) {
-        // ① 좌표 있으면 바로 줌
-        doZoom(biz.lat, biz.lng);
-      } else if (biz.address && window.kakao) {
-        // ② 좌표 없으면 주소 geocoding 후 줌
-        window.kakao.maps.load(() => {
-          const geocoder = new window.kakao.maps.services.Geocoder();
-          geocoder.addressSearch(biz.address!, (result: { x: string; y: string }[], status: string) => {
-            if (status === window.kakao.maps.services.Status.OK && result[0]) {
-              doZoom(parseFloat(result[0].y), parseFloat(result[0].x));
-            }
-          });
-        });
-      }
+    if (!newId) {
+      setSelectedId(null);
+      return;
     }
 
-    // 모바일 지도탭: 줌 보여준 후 300ms 뒤 디테일 패널 오픈
-    if (typeof window !== 'undefined' && window.innerWidth < 768 && mobileTab === 'map' && newId) {
+    if (isMobile && mobileTab === 'map') {
+      // ── 모바일 지도탭 ──
+      // zoom 즉시 → 300ms 후 패널 오픈 (zoom 잠깐 보임)
+      zoomFnRef.current?.(newId);
       setTimeout(() => setSelectedId(newId), 300);
+    } else if (!isMobile) {
+      // ── PC ──
+      // 패널 먼저 열고(300ms 애니) → 350ms 후 relayout + zoom
+      setSelectedId(newId);
+      setTimeout(() => {
+        zoomFnRef.current?.(newId); // zoomTo 내부에서 relayout 포함
+      }, 350);
     } else {
+      // ── 모바일 홈/목록탭 ──
+      // 패널만 오픈 (맵은 안 보임)
       setSelectedId(newId);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, mobileTab]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
@@ -599,23 +594,22 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
           </div>
         </aside>
 
-        {/* ─── 지도 영역 (PC: flex-1 / 모바일: absolute로 항상 렌더 — opacity 토글) ─── */}
-        {/* NOTE: display:none이면 Kakao Maps가 0x0 크기로 초기화돼서 줌 작동 안 함 */}
-        {/* absolute inset-0으로 항상 풀사이즈 유지하면서 opacity로 show/hide */}
+        {/* ─── 지도 영역 ─── */}
+        {/* 모바일: absolute inset-0으로 항상 풀사이즈 렌더 (display:none이면 Kakao Maps 0x0 초기화 버그) */}
+        {/* PC: 일반 flex-1 레이아웃 */}
         <div
           className={`
-            absolute inset-0 transition-opacity duration-200
+            transition-opacity duration-200
+            md:relative md:flex-1 md:min-w-0 md:h-full md:opacity-100 md:pointer-events-auto md:z-0
             ${mobileTab === 'map'
-              ? 'opacity-100 pointer-events-auto z-10'
-              : 'opacity-0 pointer-events-none -z-10'}
-            md:static md:flex-1 md:min-w-0 md:h-full
-            md:opacity-100 md:pointer-events-auto md:z-auto
+              ? 'absolute inset-0 z-10 opacity-100 pointer-events-auto'
+              : 'absolute inset-0 -z-10 opacity-0 pointer-events-none'}
           `}
         >
           <KakaoMapClient 
             businesses={mappable} 
             fullscreen 
-            onLoad={(map) => { mapInstanceRef.current = map; }}
+            onLoad={(map, zoomTo) => { mapInstanceRef.current = map; zoomFnRef.current = zoomTo; }}
             onMarkerClick={(id) => handleSelect(id)}
           />
         </div>

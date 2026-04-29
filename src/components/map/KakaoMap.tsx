@@ -13,10 +13,13 @@ interface Business {
   subscriptions?: { plan: string; status: string }[] | null;
 }
 
+// zoomTo(id): 해당 업소 위치로 맵 center + level 4
+export type ZoomToFn = (id: string) => void;
+
 interface KakaoMapProps {
   businesses: Business[];
   fullscreen?: boolean;
-  onLoad?: (map: any) => void;
+  onLoad?: (map: any, zoomTo: ZoomToFn) => void;
   onMarkerClick?: (id: string) => void;
 }
 
@@ -33,6 +36,8 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // 업소 ID → 카카오 LatLng 위치 캐시 (handleSelect에서 재geocoding 없이 zoom 사용)
+  const positionsCache = useRef<Map<string, any>>(new Map());
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -53,7 +58,19 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           });
 
           setStatus('ready');
-          if (onLoad) onLoad(map);
+
+          // zoomTo: 맵을 해당 업소 위치로 center + level 4
+          const zoomTo: ZoomToFn = (id: string) => {
+            const pos = positionsCache.current.get(id);
+            if (!pos) return;
+            try {
+              map.relayout();  // 레이아웃 변화 후 치수 재계산
+              map.setCenter(pos);
+              map.setLevel(4);
+            } catch { /* 무시 */ }
+          };
+
+          if (onLoad) onLoad(map, zoomTo);
 
           // 현재 위치 마커
           if (userLat !== DEFAULT_LAT || userLng !== DEFAULT_LNG) {
@@ -75,6 +92,7 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
 
           const addMarker = (biz: Business, position: any) => {
             hasValidPins = true;
+            positionsCache.current.set(biz.id, position); // zoom용 위치 캐시
             const sub = biz.subscriptions?.[0];
             const activePlan = sub?.status === 'active' ? sub.plan : null;
             const isPremium = activePlan === 'premium' || activePlan === 'elite';
