@@ -10,6 +10,7 @@ import {
 import { maskName } from '@/lib/maskName';
 import { formatPhone } from '@/lib/formatPhone';
 import { getTodayHours } from '@/lib/businessHours';
+import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 import MiniMap from '@/components/map/MiniMap';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const;
@@ -228,9 +229,9 @@ export default function DetailPanel({ businessId, onClose }: { businessId: strin
     setReportOpen(true);
   };
 
-  const sub = business?.subscriptions?.[0];
-  const isPremium = sub?.status === 'active' && sub.plan === 'premium';
-  const isStandard = sub?.status === 'active' && sub.plan === 'standard';
+  const activePlan = getActivePlanFromList(business?.subscriptions);
+  const isPremium = activePlan === 'premium' || activePlan === 'elite';
+  const isStandard = activePlan === 'standard';
   const images = business?.images?.length ? business.images : (business?.cover_image_url ? [business.cover_image_url] : []);
   const menuItems = business?.menu_items ?? [];
   const extraFees = business?.extra_fees ?? [];

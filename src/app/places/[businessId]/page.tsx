@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { formatPhone } from '@/lib/formatPhone';
 import { getTodayHours } from '@/lib/businessHours';
+import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 
 
 const REGION_LABELS: Record<string, string> = {
@@ -84,10 +85,10 @@ export default async function BusinessDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === business.owner_user_id;
 
-  const subscription = business.subscriptions?.[0];
-  const isActive = subscription?.status === 'active';
-  const isPremium = isActive && subscription.plan === 'premium';
-  const isStandard = isActive && subscription.plan === 'standard';
+  const activePlan = getActivePlanFromList(business.subscriptions);
+  const isActive = activePlan !== null;
+  const isPremium = activePlan === 'premium' || activePlan === 'elite';
+  const isStandard = activePlan === 'standard';
 
   const images: string[] = business.images ?? [];
   const menuItems: { name: string; price: number; note?: string }[] =

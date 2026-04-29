@@ -9,6 +9,7 @@ import KakaoMapClient from '@/components/map/KakaoMapClient';
 import DetailPanel from './DetailPanel';
 import { maskName } from '@/lib/maskName';
 import { getTodayHours, getTodayHoursHashtag } from '@/lib/businessHours';
+import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 import Link from 'next/link';
 
 const REGION_LABELS: Record<string, string> = {
@@ -93,13 +94,17 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   }, [businesses, searchQuery, selectedSubRegions]);
 
   // lat/lng 있거나, address만 있어도 KakaoMap geocoder가 핀 추가 가능
-  const mappable = filtered.filter((b) => (b.lat && b.lng) || !!b.address);
+  // useMemo 필수 — 매 렌더 새 배열 시 KakaoMap useEffect 재실행되어 지도 깜빡임
+  const mappable = useMemo(
+    () => filtered.filter((b) => (b.lat && b.lng) || !!b.address),
+    [filtered],
+  );
 
   // ── 홈 탭 섹션용 computed ──
   const bannerBusinesses = useMemo(() =>
     businesses.filter(b => {
-      const sub = b.subscriptions?.[0];
-      return sub?.status === 'active' && (sub.plan === 'premium' || sub.plan === 'elite') && b.cover_image_url;
+      const plan = getActivePlanFromList(b.subscriptions);
+      return (plan === 'premium' || plan === 'elite') && b.cover_image_url;
     }).slice(0, 5), [businesses]);
 
   const newBusinesses = useMemo(() =>
@@ -108,10 +113,10 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
   const popularBusinesses = useMemo(() =>
     [...businesses].sort((a, b) => {
       const tiers: Record<string, number> = { elite: 5, premium: 4, deluxe: 3, special: 2, standard: 1, basic: 0 };
-      const aSub = a.subscriptions?.[0];
-      const bSub = b.subscriptions?.[0];
-      const aT = aSub?.status === 'active' ? (tiers[aSub.plan] ?? 0) : 0;
-      const bT = bSub?.status === 'active' ? (tiers[bSub.plan] ?? 0) : 0;
+      const aPlan = getActivePlanFromList(a.subscriptions);
+      const bPlan = getActivePlanFromList(b.subscriptions);
+      const aT = aPlan ? (tiers[aPlan] ?? 0) : 0;
+      const bT = bPlan ? (tiers[bPlan] ?? 0) : 0;
       return bT - aT;
     }).slice(0, 12), [businesses]);
 
@@ -250,8 +255,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             <div className="flex gap-3 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
               {newBusinesses.map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
-                const sub = biz.subscriptions?.[0];
-                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const activePlan = getActivePlanFromList(biz.subscriptions);
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
@@ -301,8 +305,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             <div className="flex gap-3 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
               {popularBusinesses.map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
-                const sub = biz.subscriptions?.[0];
-                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const activePlan = getActivePlanFromList(biz.subscriptions);
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
@@ -353,8 +356,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             <div className="flex gap-3 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
               {newBusinesses.slice(0, 8).map(biz => {
                 const regionLabel = REGION_LABELS[biz.region_code] ?? biz.region_code;
-                const sub = biz.subscriptions?.[0];
-                const activePlan = sub?.status === 'active' ? sub.plan : null;
+                const activePlan = getActivePlanFromList(biz.subscriptions);
                 const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                 const isDeluxe = activePlan === 'deluxe';
                 const isPopular = isPremiumTier || isDeluxe;
@@ -514,7 +516,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
                 )}
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+              <div className="flex-1 overflow-y-auto p-3">
                 {filtered.map((biz) => (
                   <BusinessCard
                     key={biz.id}
@@ -551,8 +553,7 @@ export default function HomeClient({ businesses, region, category }: HomeClientP
             ) : (
               <div className="divide-y divide-gray-100">
                 {filtered.map((biz) => {
-                  const sub = biz.subscriptions?.[0];
-                  const activePlan = sub?.status === 'active' ? sub.plan : null;
+                  const activePlan = getActivePlanFromList(biz.subscriptions);
                   const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
                   const isDeluxe = activePlan === 'deluxe';
                   const isPopular = isPremiumTier || isDeluxe;

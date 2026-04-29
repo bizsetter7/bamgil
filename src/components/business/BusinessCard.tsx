@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Phone, MessageSquare } from 'lucide-react';
+import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 
 const REGION_LABELS: Record<string, string> = {
   seoul: '서울', gyeonggi: '경기', incheon: '인천',
@@ -52,74 +53,78 @@ export default function BusinessCard({ business, compact = false, selected = fal
   const categoryGradient = CATEGORY_GRADIENTS[business.category] ?? 'from-gray-300 via-gray-400 to-gray-500';
   const firstChar = business.name?.[0] ?? '?';
 
-  const sub = business.subscriptions?.[0];
-  const activePlan = sub?.status === 'active' ? sub.plan : null;
+  const activePlan = getActivePlanFromList(business.subscriptions);
   const isPremiumTier = activePlan === 'premium' || activePlan === 'elite';
   const isDeluxe = activePlan === 'deluxe';
   const isPopular = isPremiumTier || isDeluxe;
 
-  /* ── 사이드패널 컴팩트 카드 ── */
+  /* ── 사이드패널 컴팩트 카드 (밤맵 스타일 2단 레이아웃) ── */
   if (compact) {
     const regionLabel = business.region_code ? (REGION_LABELS[business.region_code] ?? business.region_code) : '';
     const subRegion = business.address ? (business.address.trim().split(/\s+/)[1] ?? '') : '';
-    const locationText = subRegion
-      ? `${regionLabel} ${subRegion} · ${business.category}`
-      : regionLabel
-      ? `${regionLabel} · ${business.category}`
-      : business.category;
+    const locationLabel = subRegion ? `${regionLabel} ${subRegion}` : regionLabel;
 
     const cardContent = (
-      <div className={`flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors group cursor-pointer
+      <div className={`rounded-2xl overflow-hidden transition-all group cursor-pointer mb-2
         ${selected
-          ? 'bg-amber-50 border border-amber-200 shadow-sm'
-          : 'hover:bg-gray-50 border border-transparent hover:border-gray-200'}`}
+          ? 'bg-amber-50 border border-amber-300 shadow-md'
+          : 'bg-white hover:bg-gray-50 border border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
       >
-        {/* 썸네일 */}
-        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative">
+        {/* 썸네일 — 가로 풀폭, 110px 높이 */}
+        <div className="relative w-full h-[110px] bg-gray-100 overflow-hidden">
           {business.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${categoryGradient} flex items-center justify-center relative overflow-hidden`}>
-              <span className="absolute text-white/20 font-black text-4xl select-none leading-none">{firstChar}</span>
-              <span className="relative text-white font-black text-xl leading-none drop-shadow">{firstChar}</span>
+              <span className="absolute text-white/15 font-black text-7xl select-none leading-none">{firstChar}</span>
+              <span className="relative text-white font-black text-3xl leading-none drop-shadow">{firstChar}</span>
             </div>
           )}
-          {/* 배지 오버레이 */}
+          {/* 좌상단 배지 묶음 */}
           {isPopular && (
-            <div className="absolute bottom-0 left-0 right-0 bg-orange-500/90 text-white text-[7px] font-black text-center py-0.5 leading-none">
+            <span className="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full leading-none shadow-sm">
               🔥 인기
-            </div>
+            </span>
           )}
-        </div>
-
-        {/* 정보 */}
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className={`text-sm font-bold truncate transition-colors leading-tight
-              ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
-              {business.name}
-            </h3>
-            {isPremiumTier && (
-              <span className="shrink-0 text-[7px] font-black bg-amber-400 text-black px-1 py-0.5 rounded leading-none">
-                ✓ 프리미엄
+          {isPremiumTier && (
+            <span className="absolute top-[26px] left-2 bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full leading-none shadow-sm">
+              ✓ 프리미엄
+            </span>
+          )}
+          {/* 우상단 카테고리 */}
+          <span className="absolute top-2 right-2 bg-black/60 text-white text-[9px] font-black px-2 py-0.5 rounded-full leading-none backdrop-blur-sm">
+            {categoryLabel}
+          </span>
+          {/* 우하단 연결수단 아이콘 */}
+          <div className="absolute bottom-2 right-2 flex gap-1">
+            {business.phone && (
+              <span className="bg-white/85 text-gray-700 p-1 rounded-full shadow-sm">
+                <Phone size={10} />
+              </span>
+            )}
+            {business.open_chat_url && (
+              <span className="bg-white/85 text-gray-700 p-1 rounded-full shadow-sm">
+                <MessageSquare size={10} />
               </span>
             )}
           </div>
-          <p className="text-[10px] text-gray-500 font-medium truncate leading-tight">
-            {locationText}
+        </div>
+
+        {/* 텍스트 정보 */}
+        <div className="px-2.5 py-2 space-y-0.5">
+          <p className="text-[10px] text-gray-400 font-medium truncate leading-tight">
+            {locationLabel}
           </p>
+          <h3 className={`text-sm font-black truncate transition-colors leading-tight
+            ${selected ? 'text-amber-600' : 'text-gray-900 group-hover:text-amber-600'}`}>
+            {business.name}
+          </h3>
           {business.address && (
             <p className="text-[10px] text-gray-400 truncate leading-tight">
               {business.address}
             </p>
           )}
-        </div>
-
-        {/* 아이콘 */}
-        <div className="shrink-0 flex gap-1.5 text-gray-300 group-hover:text-gray-500 transition-colors">
-          {business.phone && <Phone size={11} />}
-          {business.open_chat_url && <MessageSquare size={11} />}
         </div>
       </div>
     );

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { maskName } from '@/lib/maskName';
+import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 
 interface Business {
   id: string;
@@ -45,6 +46,20 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const positionsCache = useRef<Map<string, any>>(new Map());
 
+  // ── props/router refs (useEffect 재실행 방지) ──
+  const routerRef = useRef(router);
+  const onLoadRef = useRef(onLoad);
+  const onMarkerClickRef = useRef(onMarkerClick);
+  useEffect(() => { routerRef.current = router; }, [router]);
+  useEffect(() => { onLoadRef.current = onLoad; }, [onLoad]);
+  useEffect(() => { onMarkerClickRef.current = onMarkerClick; }, [onMarkerClick]);
+
+  // businesses 핵심 식별자 — id+lat+lng+plan 변경 시에만 지도 재초기화
+  const bizSignature = useMemo(
+    () => businesses.map(b => `${b.id}:${b.lat ?? ''}:${b.lng ?? ''}:${b.subscriptions?.[0]?.plan ?? ''}:${b.subscriptions?.[0]?.status ?? ''}`).join('|'),
+    [businesses],
+  );
+
   useEffect(() => {
     if (!mapRef.current) return;
     let cancelled = false;
@@ -68,6 +83,7 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             markers: [],
             averageCenter: true,
             minLevel: CLUSTER_MIN_LEVEL,
+            minClusterSize: 1,         // 단일 마커도 '1' 클러스터로 표시
             disableClickZoom: false,
             styles: [
               // count 1~9
@@ -150,13 +166,19 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             positionsCache.current.set(biz.id, position);
             bounds.extend(position);
 
-            // 티어 색상
-            const sub = biz.subscriptions?.[0];
-            const plan = sub?.status === 'active' ? sub.plan : null;
+            // 티어 색상 (active + trial 동등 취급)
+            const plan = getActivePlanFromList(biz.subscriptions);
             const isPremium = plan === 'premium' || plan === 'elite';
+            const isDeluxe = plan === 'deluxe';
             const isStandard = plan === 'standard';
-            const bgColor = isPremium ? '#d97706' : isStandard ? '#1d4ed8' : '#1e3a5f';
-            const zIdx = isPremium ? 5 : isStandard ? 3 : 1;
+            const bgColor = isPremium
+              ? '#d97706'
+              : isDeluxe
+              ? '#1d4ed8'
+              : isStandard
+              ? '#1d4ed8'
+              : '#1e3a5f';
+            const zIdx = isPremium ? 5 : isDeluxe ? 4 : isStandard ? 3 : 1;
 
             /* 라벨 CustomOverlay (이름표) */
             const el = document.createElement('div');
@@ -191,8 +213,8 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
             el.appendChild(arrow);
 
             el.addEventListener('click', () => {
-              if (onMarkerClick) onMarkerClick(biz.id);
-              else router.push(`/places/${biz.id}`);
+              if (onMarkerClickRef.current) onMarkerClickRef.current(biz.id);
+              else routerRef.current.push(`/places/${biz.id}`);
             });
 
             /* 영업진 팝업 (hover 전용 — 데스크탑) */
@@ -279,22 +301,39 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           const addressOnlyBizs = businesses.filter(b => !(b.lat && b.lng) && !!b.address);
           let pendingGeocode = addressOnlyBizs.length;
 
+          // 풀주소 실패 시 시/도+시군구 만으로 fallback (예: "충남 천안시 서북구")
+          const tryGeocode = (biz: Business, addr: string, attempt: number) => {
+            geocoder.addressSearch(addr, (result: any[], st: string) => {
+              if (cancelled) return;
+              if (st === window.kakao.maps.services.Status.OK && result[0]) {
+                addBusinessMarker(
+                  biz,
+                  new window.kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)),
+                );
+                pendingGeocode--;
+                if (pendingGeocode === 0) finalizeMarkers();
+              } else if (attempt === 0 && biz.address) {
+                // 1차 실패 → 시도+시군구만 잘라 재시도
+                const parts = biz.address.trim().split(/\s+/);
+                const fallback = parts.slice(0, Math.min(3, parts.length)).join(' ');
+                if (fallback && fallback !== addr) {
+                  tryGeocode(biz, fallback, 1);
+                  return;
+                }
+                pendingGeocode--;
+                if (pendingGeocode === 0) finalizeMarkers();
+              } else {
+                pendingGeocode--;
+                if (pendingGeocode === 0) finalizeMarkers();
+              }
+            });
+          };
+
           businesses.forEach((biz) => {
             if (biz.lat && biz.lng) {
               addBusinessMarker(biz, new window.kakao.maps.LatLng(biz.lat, biz.lng));
             } else if (biz.address) {
-              geocoder.addressSearch(stripDetailAddr(biz.address), (result: any[], st: string) => {
-                if (cancelled) return;
-                if (st === window.kakao.maps.services.Status.OK && result[0]) {
-                  addBusinessMarker(
-                    biz,
-                    new window.kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)),
-                  );
-                }
-                pendingGeocode--;
-                // 모든 geocoding 완료 시 finalize
-                if (pendingGeocode === 0) finalizeMarkers();
-              });
+              tryGeocode(biz, stripDetailAddr(biz.address), 0);
             }
           });
 
@@ -313,7 +352,7 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
           };
 
           setStatus('ready');
-          if (onLoad) onLoad(map, zoomTo);
+          if (onLoadRef.current) onLoadRef.current(map, zoomTo);
         });
       } catch {
         if (!cancelled) setStatus('error');
@@ -344,8 +383,9 @@ export default function KakaoMap({ businesses, fullscreen = false, onLoad, onMar
       if (clustererRef) { try { clustererRef.clear(); } catch { /* 무시 */ } }
       ownedOverlays.forEach((o) => { try { o.setMap(null); } catch { /* 무시 */ } });
     };
+  // bizSignature 가 같으면 재초기화 안 함 (id+lat/lng+plan 변경 시에만)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businesses, router]);
+  }, [bizSignature]);
 
   return (
     <div
