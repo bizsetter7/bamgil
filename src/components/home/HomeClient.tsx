@@ -147,6 +147,18 @@ export default function HomeClient({
     return plan ? (PLAN_RANK[plan] ?? 0) : 0;
   };
 
+  // [Perf] businesses 사전 인덱싱 (O(N²) → O(N))
+  const businessGroupMap = useMemo(() => {
+    const map = new Map<string, Business[]>();
+    businesses.forEach(b => {
+      const key = (b.business_reg_number && b.business_reg_number.trim()) || b.id;
+      const list = map.get(key);
+      if (list) list.push(b);
+      else map.set(key, [b]);
+    });
+    return map;
+  }, [businesses]);
+
   const filteredGroups = useMemo(() => {
     const seen = new Set<string>();
     const result: Array<{ groupKey: string; primary: Business; members: Business[] }> = [];
@@ -154,10 +166,8 @@ export default function HomeClient({
       const key = (b.business_reg_number && b.business_reg_number.trim()) || b.id;
       if (seen.has(key)) return;
       seen.add(key);
-      // 같은 사업자번호 가진 모든 row (필터 무관 — 전체 businesses 기준으로 영업진 모음)
-      const members = (b.business_reg_number && b.business_reg_number.trim())
-        ? businesses.filter(m => (m.business_reg_number ?? '').trim() === key)
-        : [b];
+      // 같은 사업자번호 가진 모든 row — Map 인덱스로 O(1) 조회
+      const members = businessGroupMap.get(key) ?? [b];
       // primary: plan 우선순위 → 같으면 created_at 빠른 순
       const primary = members.slice().sort((a, b) => {
         const diff = planRank(b) - planRank(a);
@@ -168,7 +178,7 @@ export default function HomeClient({
     });
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, businesses]);
+  }, [filtered, businessGroupMap]);
 
   // KakaoMap에 전달할 마커 — 그룹당 primary 1개만
   const mappable = useMemo(

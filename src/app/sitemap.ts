@@ -5,7 +5,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://bamgil.kr';
   return [
     { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    { url: `${base}/rankings`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     ...SEO_REGIONS.map(r => ({
       url: `${base}/${r.slug}`,
       lastModified: new Date(),

@@ -19,7 +19,6 @@ const MENU_SECTIONS = [
     title: '둘러보기',
     items: [
       { label: '밤길 메인', href: '/' },
-      { label: '업소 랭킹', href: '/rankings' },
       { label: '업소 찾기', href: '/' },
     ],
   },
