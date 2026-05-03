@@ -1,4 +1,5 @@
 import { SEO_REGIONS } from '@/lib/regions';
+import { decodeRegionSlug, buildCanonicalUrl } from '@/lib/seo';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -9,13 +10,14 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ region: string }> }) {
   const { region } = await params;
-  const found = SEO_REGIONS.find(r => r.slug === region);
+  const decoded = decodeRegionSlug(region);                  // P-03: NFC 정규화
+  const found = SEO_REGIONS.find(r => r.slug === decoded);
   if (!found) return {};
-  
+
   return {
     title: `${found.name} 룸살롱·유흥업소 목록 | 밤길`,
     description: `${found.name} 지역 룸살롱·유흥 업소 정보. 리뷰·별점·실시간 조회수로 업소를 찾아보세요.`,
-    alternates: { canonical: `https://bamgil.kr/${region}` },
+    alternates: { canonical: buildCanonicalUrl('https://www.bamgil.kr', [decoded]) },
     openGraph: {
       title: `${found.name} 밤문화 업소 찾기 | 밤길`,
     },
@@ -24,7 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ region: s
 
 export default async function RegionPage({ params }: { params: Promise<{ region: string }> }) {
   const { region } = await params;
-  const found = SEO_REGIONS.find(r => r.slug === region);
+  const decoded = decodeRegionSlug(region);                  // P-03: NFC 정규화
+  const found = SEO_REGIONS.find(r => r.slug === decoded);
   if (!found) notFound();
 
   const supabase = createClient(

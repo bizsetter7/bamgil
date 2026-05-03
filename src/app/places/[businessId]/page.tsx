@@ -14,6 +14,7 @@ import {
 import { formatPhone } from '@/lib/formatPhone';
 import { getTodayHours } from '@/lib/businessHours';
 import { getActivePlanFromList } from '@/lib/subscriptionPlan';
+import { CouponSection } from '@/components/business/CouponSection';
 
 
 const REGION_LABELS: Record<string, string> = {
@@ -411,6 +412,11 @@ export default async function BusinessDetailPage({
             </div>
           </div>
         )}
+
+        {/* 쿠폰 섹션 */}
+        <div className="px-4">
+          <CouponSection businessId={businessId} />
+        </div>
 
         {/* 여백 */}
         <div className="h-8" />
