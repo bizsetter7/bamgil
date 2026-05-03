@@ -15,19 +15,74 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: '밤길 — 검증된 업소 탐색 플랫폼',
-  description: '지도 기반으로 내 주변 안전한 업소를 찾아보세요.',
-  keywords: ["밤길", "밤문화", "업소정보", "위치기반", "카카오맵"],
-  openGraph: {
-    title: '밤길',
-    description: '검증된 업소 탐색',
-    url: 'https://bamgil.kr',
-    siteName: '밤길',
-    locale: 'ko_KR',
-    type: 'website',
-  },
-};
+/**
+ * generateMetadata — P-12 SEO 마스터 표준 (P9 웨이터존 패턴 이식)
+ * - 복제사이트 감지 → robots noindex + canonical 차단
+ * - GEO 메타태그 + OpenGraph + Twitter Card 일괄 적용
+ * - GSC: 도메인 속성 인증(DNS TXT)이라 verification meta tag 선택 사항
+ *
+ * Refs: PATTERNS/P-12_seo_master.md
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bamgil.kr';
+  const isCloneSite =
+    siteUrl.includes('d386') ||
+    (siteUrl.includes('vercel.app') && !siteUrl.includes('bamgil'));
+
+  // 복제사이트: 색인 차단 + 본 사이트로 canonical
+  if (isCloneSite) {
+    return {
+      title: '밤길',
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: { index: false, follow: false },
+      },
+      alternates: { canonical: 'https://www.bamgil.kr' },
+    };
+  }
+
+  let metadataBase: URL | null = null;
+  try { metadataBase = new URL(siteUrl); }
+  catch { metadataBase = new URL('https://www.bamgil.kr'); }
+
+  const title = '밤길 — 검증된 업소 탐색 플랫폼';
+  const description = '지도 기반으로 내 주변 안전한 유흥업소를 찾아보세요. 실시간 영업시간·리뷰·찜하기.';
+  const ogImage = `${siteUrl}/og-image.jpg`;
+
+  return {
+    metadataBase,
+    title,
+    description,
+    keywords: ['밤길', '밤문화', '유흥업소', '업소정보', '위치기반', '카카오맵', '룸살롱', '노래주점', '강남업소', '서울업소'],
+    verification: process.env.NEXT_PUBLIC_GSC_VERIFICATION
+      ? { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION }
+      : undefined,
+    openGraph: {
+      title: '밤길',
+      description,
+      url: siteUrl,
+      siteName: '밤길',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: '밤길 - 검증된 업소 탐색' }],
+      type: 'website',
+      locale: 'ko_KR',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+    other: {
+      google: 'notranslate',
+      'geo.region': 'KR',
+      'geo.placename': 'Seoul',
+      'geo.position': '37.4979;127.0276',
+      'ICBM': '37.4979, 127.0276',
+      'robots': 'max-image-preview:large',
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -45,7 +100,28 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-gray-900">
+      <body className="min-h-full flex flex-col bg-white text-gray-900 notranslate">
+        {/* JSON-LD WebSite + SearchAction — P-12 SEO 표준 (사이트링크 검색박스) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              'name': '밤길',
+              'alternateName': 'BAMGIL',
+              'url': 'https://www.bamgil.kr',
+              'potentialAction': {
+                '@type': 'SearchAction',
+                'target': {
+                  '@type': 'EntryPoint',
+                  'urlTemplate': 'https://www.bamgil.kr/?q={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <Script
           src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services,clusterer`}
           strategy="afterInteractive"
