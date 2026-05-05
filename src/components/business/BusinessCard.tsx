@@ -144,10 +144,15 @@ export default function BusinessCard({ business, compact = false, selected = fal
               )}
             </div>
           )}
-          {/* 연락 아이콘 */}
-          <div className="flex gap-2 text-gray-300 group-hover:text-gray-500 transition-colors mt-auto">
-            {business.phone && <Phone size={12} />}
-            {business.open_chat_url && <MessageSquare size={12} />}
+          {/* 전화번호 + 연락 아이콘 */}
+          <div className="flex items-center gap-2 mt-auto">
+            {business.phone && (
+              <div className="flex items-center gap-1 min-w-0">
+                <Phone size={10} className="text-gray-400 shrink-0" />
+                <span className="text-[10px] font-bold text-gray-500 truncate">{business.phone}</span>
+              </div>
+            )}
+            {business.open_chat_url && <MessageSquare size={10} className="text-gray-400 shrink-0" />}
           </div>
         </div>
       </div>
