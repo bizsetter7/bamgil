@@ -10,6 +10,7 @@ export default function OnboardingPage() {
   const [nickname, setNickname] = useState('');
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [ownerRedirecting, setOwnerRedirecting] = useState(false);
   const router = useRouter();
 
   // 이미 프로필 있으면 홈으로
@@ -26,6 +27,27 @@ export default function OnboardingPage() {
       setChecking(false);
     });
   }, [router]);
+
+  const handleOwnerSelect = async () => {
+    if (ownerRedirecting) return;
+    setOwnerRedirecting(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // 온보딩 루프 방지 — 업체 사장님도 bamgil_user_profiles 저장
+      const defaultNickname = (
+        (user.user_metadata?.name as string | undefined)?.slice(0, 12) ||
+        user.email?.split('@')[0]?.slice(0, 12) ||
+        '사장님'
+      );
+      await supabase.from('bamgil_user_profiles').upsert({
+        id: user.id,
+        nickname: defaultNickname,
+        email: user.email,
+      });
+    }
+    window.location.href = 'https://www.yasajang.kr';
+  };
 
   const handleSaveProfile = async () => {
     if (!nickname.trim() || saving) return;
@@ -90,19 +112,22 @@ export default function OnboardingPage() {
             </button>
 
             {/* 업체 선택 */}
-            <a
-              href="https://www.yasajang.kr"
-              className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-left hover:border-gray-400 active:scale-[0.98] transition-all shadow-sm group flex items-center gap-4"
+            <button
+              onClick={handleOwnerSelect}
+              disabled={ownerRedirecting}
+              className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-left hover:border-gray-400 active:scale-[0.98] transition-all shadow-sm group flex items-center gap-4 disabled:opacity-60"
             >
               <span className="text-3xl shrink-0">🏢</span>
               <div className="flex-1 min-w-0">
                 <p className="font-black text-gray-900 text-[17px]">업체 사장님이신가요?</p>
-                <p className="text-gray-500 text-sm mt-0.5">야사장에서 업소 등록 · 구독 관리</p>
+                <p className="text-gray-500 text-sm mt-0.5">
+                  {ownerRedirecting ? '야사장으로 이동 중...' : '야사장에서 업소 등록 · 구독 관리'}
+                </p>
               </div>
               <span className="text-gray-400 font-bold text-xl shrink-0 group-hover:translate-x-1 transition-transform">
                 ↗
               </span>
-            </a>
+            </button>
           </div>
 
           <p className="text-center text-gray-400 text-xs mt-6">

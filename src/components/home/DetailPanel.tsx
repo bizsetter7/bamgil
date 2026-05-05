@@ -63,6 +63,7 @@ interface Business {
   menu_items: { name: string; price: number; note?: string }[] | null;
   extra_fees: { label: string; value: string; amount: number }[] | null;
   subscriptions: { status: string; plan: string }[] | null;
+  updated_at: string | null;
 }
 
 interface GroupMember {
@@ -406,14 +407,66 @@ export default function DetailPanel({
                 </div>
               )}
 
-              {/* 주소 */}
-              <div className="flex items-start gap-2 text-sm text-gray-700 mb-2">
-                <MapPin size={14} className="shrink-0 mt-0.5 text-gray-400" />
-                <span>
-                  {business.address ?? REGION_LABELS[business.region_code] ?? business.region_code}
-                  {business.address_detail && <span className="text-gray-500"> {business.address_detail}</span>}
-                </span>
-              </div>
+              {/* 주소 + 복사 */}
+              {(() => {
+                const addr = business.address ?? REGION_LABELS[business.region_code] ?? business.region_code ?? '';
+                const fullAddr = addr + (business.address_detail ? ` ${business.address_detail}` : '');
+                const kakaoWalkUrl = (business.lat && business.lng)
+                  ? `https://map.kakao.com/link/to/${encodeURIComponent(business.name)},${business.lat},${business.lng}`
+                  : `https://map.kakao.com/?q=${encodeURIComponent(fullAddr)}`;
+                return (
+                  <>
+                    <div className="flex items-start gap-2 text-sm text-gray-700 mb-1">
+                      <MapPin size={14} className="shrink-0 mt-0.5 text-gray-400" />
+                      <span className="flex-1">
+                        {addr}
+                        {business.address_detail && <span className="text-gray-500"> {business.address_detail}</span>}
+                      </span>
+                      <button
+                        onClick={() => navigator.clipboard?.writeText(fullAddr)}
+                        className="shrink-0 text-gray-400 hover:text-gray-700 transition-colors"
+                        title="주소 복사"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    </div>
+                    {/* 택시 / 대리 / 도보 */}
+                    <div className="flex gap-2 mt-2 mb-3">
+                      <a
+                        href="https://play.google.com/store/apps/details?id=com.kakao.taxi"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 rounded-xl border border-gray-200 text-center text-xs font-bold text-gray-700 hover:bg-amber-50 hover:border-amber-300 transition-colors"
+                      >
+                        🚕 택시 부르기
+                      </a>
+                      <a
+                        href="https://play.google.com/store/apps/details?id=com.kakao.taxi"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 rounded-xl border border-gray-200 text-center text-xs font-bold text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        🚗 대리 부르기
+                      </a>
+                      <a
+                        href={kakaoWalkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 rounded-xl border border-gray-200 text-center text-xs font-bold text-gray-700 hover:bg-green-50 hover:border-green-300 transition-colors"
+                      >
+                        🚶 도보 길찾기
+                      </a>
+                    </div>
+                    {/* 최근 광고 수정일 */}
+                    {business.updated_at && (
+                      <p className="text-[11px] text-gray-400 mb-2">
+                        최근 광고 수정일:{' '}
+                        {new Date(business.updated_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* 영업시간 */}
               {todayHours && (

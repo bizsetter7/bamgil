@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { LayoutDashboard, Building2, Phone, LogOut, Map } from 'lucide-react';
+import { LayoutDashboard, Building2, Phone, LogOut, Map, Tag, Calendar } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -48,6 +48,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/contacts" className="flex items-center px-4 py-3 text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
             <Phone size={16} className="mr-3" /> 연락 통계
+          </Link>
+          <Link href="/admin/coupons" className="flex items-center px-4 py-3 text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
+            <Tag size={16} className="mr-3" /> 쿠폰 현황
+          </Link>
+          <Link href="/admin/events" className="flex items-center px-4 py-3 text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
+            <Calendar size={16} className="mr-3" /> 이벤트 현황
           </Link>
         </nav>
 

@@ -15,6 +15,8 @@ import { formatPhone } from '@/lib/formatPhone';
 import { getTodayHours } from '@/lib/businessHours';
 import { getActivePlanFromList } from '@/lib/subscriptionPlan';
 import { CouponSection } from '@/components/business/CouponSection';
+import { EventSection } from '@/components/business/EventSection';
+import { NoticeSection } from '@/components/business/NoticeSection';
 
 
 const REGION_LABELS: Record<string, string> = {
@@ -412,6 +414,16 @@ export default async function BusinessDetailPage({
             </div>
           </div>
         )}
+
+        {/* 공지 섹션 */}
+        <div className="px-4">
+          <NoticeSection businessId={businessId} />
+        </div>
+
+        {/* 이벤트 섹션 */}
+        <div className="px-4">
+          <EventSection businessId={businessId} />
+        </div>
 
         {/* 쿠폰 섹션 */}
         <div className="px-4">

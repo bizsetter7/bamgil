@@ -31,7 +31,7 @@ const MENU_SECTIONS = [
   {
     title: '고객 센터',
     items: [
-      { label: '공지사항', href: '#notice' },
+      { label: '공지사항', href: '/notice' },
       { label: '1:1 문의', href: '#contact' },
       { label: '약관 및 정책', href: '#terms' },
     ],

@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
   // 업소 소유자 확인
   const { data: biz } = await supabaseAdmin
     .from('businesses')
-    .select('id, user_id')
+    .select('id, owner_id')
     .eq('id', businessId)
     .single();
 
-  if (!biz || biz.user_id !== user.id) {
+  if (!biz || biz.owner_id !== user.id) {
     return NextResponse.json({ error: '권한 없음' }, { status: 403 });
   }
 
