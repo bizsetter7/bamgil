@@ -122,6 +122,24 @@ export default function RootLayout({
             }),
           }}
         />
+        {/* JSON-LD Organization — 브랜드 엔티티 신호 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              'name': '밤길',
+              'alternateName': ['BAMGIL', '밤길닷컴', '밤길지도'],
+              'url': 'https://www.bamgil.kr',
+              'logo': 'https://www.bamgil.kr/logo.png',
+              'description': '전국 유흥업소 지도 플랫폼. 밤길에서 내 주변 업소를 찾고 실시간 정보를 확인하세요.',
+              'foundingDate': '2026',
+              'areaServed': 'KR',
+              'knowsAbout': ['유흥업소', '밤길', '유흥지도', '업소찾기'],
+            }),
+          }}
+        />
         <Script
           src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services,clusterer`}
           strategy="afterInteractive"
