@@ -102,8 +102,8 @@ export default function OnboardingPage() {
               <div className="flex items-center gap-4">
                 <span className="text-3xl shrink-0">🙋</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-gray-900 text-[17px]">손님으로 시작</p>
-                  <p className="text-gray-500 text-sm mt-0.5">업소 탐색 · 리뷰 · 찜하기 · 쿠폰</p>
+                  <p className="font-black text-gray-900 text-[17px]">손님으로 시작 (개인)</p>
+                  <p className="text-gray-500 text-sm mt-0.5">업소 방문 탐색 · 리뷰 · 찜하기</p>
                 </div>
                 <span className="text-amber-500 font-bold text-xl shrink-0 group-hover:translate-x-1 transition-transform">
                   →
@@ -130,7 +130,15 @@ export default function OnboardingPage() {
             </button>
           </div>
 
-          <p className="text-center text-gray-400 text-xs mt-6">
+          {/* 알바 구직자 안내 — 밤길은 업소 탐색 전용, 구인구직 X */}
+          <div className="mt-4 p-3 bg-gray-100 rounded-xl text-center">
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              💼 <strong className="text-gray-700">알바 구직·구인</strong> 서비스는 밤길과 별개입니다<br />
+              <span className="text-gray-600 font-medium">코코알바 · 웨이터존 · 선수존</span>을 이용해주세요
+            </p>
+          </div>
+
+          <p className="text-center text-gray-400 text-xs mt-4">
             이용 시{' '}
             <a href="#" className="underline hover:text-gray-600">이용약관</a>
             {' '}및{' '}
