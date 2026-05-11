@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import FooterNoticeSection from './FooterNoticeSection';
 
 export default function Footer() {
   return (
@@ -34,6 +36,10 @@ export default function Footer() {
           </div>
         </div>
         
+        <Suspense fallback={null}>
+          <FooterNoticeSection />
+        </Suspense>
+
         <div className="mt-12 pt-8 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-zinc-600">
           <p>&copy; 2026 BAMGIL. All rights reserved.</p>
           <p>Powered by Yasajang Platform</p>
