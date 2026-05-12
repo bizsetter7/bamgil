@@ -87,6 +87,7 @@ export default function DetailPanel({
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
 
   // 잘못된 정보 제보 모달
@@ -305,7 +306,12 @@ export default function DetailPanel({
               {images.length > 0 ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={images[imgIdx]} alt={business.name} className="w-full h-48 object-cover" />
+                  <img
+                    src={images[imgIdx]}
+                    alt={business.name}
+                    className="w-full h-48 object-cover cursor-zoom-in"
+                    onClick={() => setLightboxImg(images[imgIdx])}
+                  />
                   {/* 검증 배지 오버레이 */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2">
                     <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-bold">
@@ -596,8 +602,11 @@ export default function DetailPanel({
               <div className="bg-white px-4 py-4 mt-2 border-b border-gray-100">
                 <div className="grid grid-cols-3 gap-1.5">
                   {images.slice(0, 6).map((img, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
-                      onClick={() => setImgIdx(i)}>
+                    <div
+                      key={i}
+                      className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-zoom-in"
+                      onClick={() => { setImgIdx(i); setLightboxImg(img); }}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt="" className="w-full h-full object-cover" />
                       {i === 5 && images.length > 6 && (
@@ -796,6 +805,48 @@ export default function DetailPanel({
           </>
         )}
       </div>
+
+      {/* ── 이미지 라이트박스 ── */}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <button
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            onClick={() => setLightboxImg(null)}
+          >
+            <X size={22} />
+          </button>
+          {/* 좌우 화살표 (이미지가 여러 장일 때) */}
+          {images.length > 1 && (
+            <>
+              <button
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+                onClick={e => { e.stopPropagation(); const prev = Math.max(0, imgIdx - 1); setImgIdx(prev); setLightboxImg(images[prev]); }}
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+                onClick={e => { e.stopPropagation(); const next = Math.min(images.length - 1, imgIdx + 1); setImgIdx(next); setLightboxImg(images[next]); }}
+              >
+                <ChevronRight size={22} />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">
+                {imgIdx + 1} / {images.length}
+              </div>
+            </>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxImg}
+            alt=""
+            className="max-w-full max-h-full object-contain select-none rounded-lg"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* ── 잘못된 정보 제보 모달 ── */}
       {reportOpen && business && (
