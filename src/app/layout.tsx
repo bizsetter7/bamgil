@@ -52,6 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase,
+    alternates: { canonical: siteUrl },
     title,
     description,
     keywords: ['밤길', '밤문화', '유흥업소', '업소정보', '위치기반', '카카오맵', '룸살롱', '노래주점', '강남업소', '서울업소'],
